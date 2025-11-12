@@ -1,0 +1,131 @@
+## Visual Studio / .NET ##
+##########################
+
+# Compilación
+bin/
+obj/
+out/
+[Bb]uild/
+[Ll]ogs/
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+*.bak
+*.old
+*.cache
+*.config.user
+*.svclog
+*.user
+*.suo
+*.userosscache
+*.userprefs
+*.tlog
+
+# Visual Studio
+.vs/
+.vscode/
+.idea/
+*.dbmdl
+*.dbproj.schemaview
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+
+# Configuración del entorno local
+*.psess
+*.vsp
+*.vspx
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*_h.h
+*.ncb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.opendb
+
+# Archivos generados por tests
+TestResults/
+*.coverage
+*.coveragexml
+*.testsettings
+*.trx
+*.VisualState.xml
+
+# Publicaciones y despliegue
+publish/
+app.publish/
+*.Publish.xml
+*.pubxml
+*.pubxml.user
+project.lock.json
+project.fragment.lock.json
+project.assets.json
+
+# Paquetes NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+.nuget/
+# pero mantenemos los archivos de configuración
+!nuget.config
+!NuGet.Config
+
+# Configuración de usuario
+*.dotsettings.user
+
+# Archivos de Azure
+*.azurePubxml
+*.PublishSettings
+*.publishsettings
+ServiceDependencies/
+ServiceReferences/
+
+# Certificados locales y secretos
+*.pfx
+*.p12
+*.key
+*.snk
+secrets.json
+appsettings.Development.json
+
+# Logs de ejecución
+*.log
+*.trace
+*.etl
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# Respaldo de migraciones EF
+MigrationsBackup/
+
+# Archivos de runtime
+*.pidb
+*.svclog
+*.scc
+*.exe
+*.dll
+*.pdb
+*.mdb
+
+# Docker
+docker-compose.override.yml
+*.env
+.env.*
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+##########################
+# Fin del .gitignore
+##########################
