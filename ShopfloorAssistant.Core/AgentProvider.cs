@@ -18,9 +18,11 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         private readonly SqlQueryExecutor _sqlQueryExecutor;
         private readonly IAiSearchService _aiSearchService;
         private readonly OpenAiOptions _openAiOptions;
+        private readonly McpOptions _mcpOptions;
 
         public AgentProvider(
             IOptions<OpenAiOptions> openAiOptions,
+            IOptions<McpOptions> mcpOptions,
             IAgentPromptProvider promptProvider,
             SqlQueryExecutor sqlQueryExecutor,
             IAiSearchService aiSearchService
@@ -28,6 +30,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         {
             _promptProvider = promptProvider;
             _openAiOptions = openAiOptions.Value ?? throw new ArgumentNullException(nameof(openAiOptions));
+            _mcpOptions = mcpOptions.Value ?? throw new ArgumentNullException(nameof(mcpOptions));
             var endpoint = _openAiOptions.Endpoint;
             var credential = new ApiKeyCredential(_openAiOptions.AgentModelApiKey);
             _openAIClient = new AzureOpenAIClient(new Uri(endpoint), credential);
@@ -127,27 +130,27 @@ namespace ShopfloorAssistant.Core.AgentsConfig
 
         public async Task<string> McpTest(string input)
         {
-            await using var mcpClient = await McpClient.CreateAsync(
-                new StdioClientTransport(new()
-                {
-                    Name = "Atlassian MCP",
-                    Command = "npx",
-                    Arguments = [
-                        //"http://127.0.0.1:8096/servers/jira/sse"
-                        "-y",
-                        "--verbose",
-                        "mcp-remote",
-                        "https://mcp.atlassian.com/v1/sse"
-                    ]
-                }),
-                new McpClientOptions()
-                {
-                    ClientInfo = new ModelContextProtocol.Protocol.Implementation()
-                    {
-                        Name = ".Net APP Shopfloor",
-                        Version = "1.0.0.0"
-                    }
-                });
+            //await using var mcpClient = await McpClient.CreateAsync(
+            //    new StdioClientTransport(new()
+            //    {
+            //        Name = "Atlassian MCP",
+            //        Command = "npx",
+            //        Arguments = [
+            //            //"http://127.0.0.1:8096/servers/jira/sse"
+            //            "-y",
+            //            "--verbose",
+            //            "mcp-remote",
+            //            "https://mcp.atlassian.com/v1/sse"
+            //        ]
+            //    }),
+            //    new McpClientOptions()
+            //    {
+            //        ClientInfo = new ModelContextProtocol.Protocol.Implementation()
+            //        {
+            //            Name = ".Net APP Shopfloor",
+            //            Version = "1.0.0.0"
+            //        }
+            //    });
 
             //await using var mcpClient = await McpClient.CreateAsync(
             //    new HttpClientTransport(new()
@@ -161,19 +164,19 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             //         }
             //    }));
 
-            //await using var mcpClient = await McpClient.CreateAsync(
-            //    new HttpClientTransport(new()
-            //    {
-            //        Name = "Jira",
-            //        Endpoint = new Uri("https://jira-mcp.kindgrass-76bbda58.westeurope.azurecontainerapps.io/mcp"),
-            //        TransportMode = HttpTransportMode.StreamableHttp
-            //    }));
-            
+            await using var mcpClient = await McpClient.CreateAsync(
+                new HttpClientTransport(new()
+                {
+                    Name = _mcpOptions.Name,
+                    Endpoint = new Uri(_mcpOptions.Endpoint),
+                    TransportMode = HttpTransportMode.StreamableHttp
+                }));
+
             var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
             
             AIAgent agent = _openAIClient
-             .GetChatClient("gpt-4o-mini")
-             .CreateAIAgent(instructions: "You answer questions related to Github MCP only.", tools: [.. mcpTools.Cast<AITool>()]);
+             .GetChatClient(_mcpOptions.ModelName ?? _openAiOptions.AgentsModel)
+             .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. mcpTools.Cast<AITool>()]);
             var response = await agent.RunAsync(input);
             return response.Text;
         }

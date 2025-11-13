@@ -96,6 +96,7 @@ builder.Services.AddControllers();
 builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection(OpenAiOptions.OpenAI));
 builder.Services.Configure<SqlQueryOptions>(builder.Configuration.GetSection(SqlQueryOptions.Sql));
 builder.Services.Configure<AiSearchOptions>(builder.Configuration.GetSection(AiSearchOptions.AzureAISearch));
+builder.Services.Configure<McpOptions>(builder.Configuration.GetSection(McpOptions.Mcp));
 
 builder.Services.AddTransient<ShopfloorAssistant.AppService.IAgentAppService, ShopfloorAssistant.AppService.AgentAppService>();
 builder.Services.AddTransient<ISqlQueryService, SqlQueryService>();
