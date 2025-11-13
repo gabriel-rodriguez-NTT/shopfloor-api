@@ -5,17 +5,17 @@ WORKDIR /src
 # Copiar primero los archivos de proyecto (mejora el cacheo de dependencias)
 COPY ["ShopfloorAssistant.Core/ShopfloorAssistant.Core.csproj", "ShopfloorAssistant.Core/"]
 COPY ["ShopfloorAssistant.AppService/ShopfloorAssistant.AppService.csproj", "ShopfloorAssistant.AppService/"]
-COPY ["ConsoleApp2/ConsoleApp2.csproj", "ConsoleApp2/"]
+COPY ["ShopfloorAssistant.Host/ShopfloorAssistant.Host.csproj", "ShopfloorAssistant.Host/"]
 
 # Restaurar dependencias
 
 # Copiar el resto del código fuente
 COPY . .
-RUN dotnet restore "ConsoleApp2/ConsoleApp2.csproj"
+RUN dotnet restore "ShopfloorAssistant.Host/ShopfloorAssistant.Host.csproj"
 
 # Publicar la API en modo Release
-WORKDIR /src/ConsoleApp2
-RUN dotnet publish "ConsoleApp2.csproj" -c Release -o /app/publish --no-restore
+WORKDIR /src/ShopfloorAssistant.Host
+RUN dotnet publish "ShopfloorAssistant.Host.csproj" -c Release -o /app/publish --no-restore
 
 # ========== RUNTIME STAGE ==========
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
@@ -33,4 +33,4 @@ COPY --from=build /app/publish .
 EXPOSE 8080
 
 # Comando de entrada
-ENTRYPOINT ["dotnet", "ConsoleApp2.dll"]
+ENTRYPOINT ["dotnet", "ShopfloorAssistant.Host.dll"]

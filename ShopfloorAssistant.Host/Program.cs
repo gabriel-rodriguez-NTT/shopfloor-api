@@ -4,6 +4,7 @@ using Microsoft.OpenApi.Models;
 using ShopfloorAssistant.Core;
 using ShopfloorAssistant.Core.AgentsConfig;
 using ShopfloorAssistant.Core.AiSearch;
+using ShopfloorAssistant.Core.Email;
 using ShopfloorAssistant.Core.Sql;
 using ShopfloorAssistant.Core.Workflows;
 
@@ -105,6 +106,7 @@ builder.Services.AddTransient<IAiSearchService, AiSearchService>();
 
 builder.Services.AddSingleton<IAgentProvider, AgentProvider>();
 builder.Services.AddTransient<IUserRoleService, UserRoleService>();
+builder.Services.AddHttpClient<IEmailService, PowerAutomateMailService>();
 builder.Services.AddSingleton<IAgentPromptProvider>(provider =>
 {
     var roleService = provider.GetRequiredService<IUserRoleService>();

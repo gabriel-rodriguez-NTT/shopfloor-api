@@ -11,7 +11,7 @@ using System.Linq;
 using ShopfloorAssistant.AppService;
 using Microsoft.AspNetCore.Authorization;
 
-namespace ConsoleApp2.Controllers
+namespace ShopfloorAssistant.Host.Controllers
 {
     [Authorize]
     [ApiController]

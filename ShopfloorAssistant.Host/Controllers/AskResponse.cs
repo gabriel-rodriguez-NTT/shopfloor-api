@@ -1,4 +1,4 @@
-﻿namespace ConsoleApp2.Controllers
+﻿namespace ShopfloorAssistant.Host.Controllers
 {
     public partial class AgentController
     {
