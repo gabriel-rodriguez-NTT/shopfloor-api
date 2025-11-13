@@ -42,8 +42,10 @@ namespace ShopfloorAssistant.Core.Workflows
         public async ValueTask<AiSearchQueryResult> HandleAsync(string query, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
             await context.YieldOutputAsync($"[AISearch Agent (Executor)]: Executing semantic search...", cancellationToken);
+            Console.WriteLine($"[AISearch Agent (Executor)]: Executing semantic search...", cancellationToken);
             var response = await _agent.RunAsync(query, _thread, cancellationToken: cancellationToken);
             await context.YieldOutputAsync($"[AISearch Agent (Executor)]: Semantic search executed...", cancellationToken);
+            Console.WriteLine($"[AISearch Agent (Executor)]: Semantic search executed...", cancellationToken);
 
             var aiSearchResult = new AiSearchQueryResult()
             {

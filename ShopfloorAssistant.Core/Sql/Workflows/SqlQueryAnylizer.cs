@@ -5,7 +5,7 @@ using ShopfloorAssistant.Core.Sql;
 
 namespace ShopfloorAssistant.Core.Workflows
 {
-    public class SqlQueryAnylizer : Executor<SqlQueryResult>
+    public class SqlQueryAnylizer : Executor<SqlQueryResult, string>
     {
         private AIAgent _agent;
         private AgentThread _thread;
@@ -24,7 +24,7 @@ namespace ShopfloorAssistant.Core.Workflows
             _thread = _agent.GetNewThread();
         }
 
-        public override async ValueTask HandleAsync(SqlQueryResult sqlQueryResult, IWorkflowContext context, CancellationToken cancellationToken = default)
+        public override async ValueTask<string> HandleAsync(SqlQueryResult sqlQueryResult, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
             await context.YieldOutputAsync($"[SQL Agent (Anylizer)]: Anylizing SQL results \n\t{sqlQueryResult.QueryResult}...", cancellationToken);
             var message = $"""
@@ -40,6 +40,7 @@ namespace ShopfloorAssistant.Core.Workflows
             await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
 
             await context.SendMessageAsync(sqlQueryResult, cancellationToken: cancellationToken);
+            return response.Text;
         }
     }
 }

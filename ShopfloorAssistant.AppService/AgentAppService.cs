@@ -25,6 +25,7 @@ namespace ShopfloorAssistant.AppService
             {
                 "ai-search" => await _agentConfigurator.GetAiSearchWorkflow(),
                 "sql-search" => await _agentConfigurator.GetSqlWorkflow(),
+                "concurrent" => await _agentConfigurator.GetConcurrentWorkflow(),
                 _ => throw new InvalidOperationException($"Invalid workflow type '{workflowType}'.")
             };
 

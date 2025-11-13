@@ -30,6 +30,7 @@ namespace ShopfloorAssistant.Core.Workflows
         public async ValueTask<SqlQueryResult> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
             await context.YieldOutputAsync($"[SQL Agent (Builder)]: Generating query...", cancellationToken);
+            Console.WriteLine($"[SQL Agent (Builder)]: Generating query...", cancellationToken);
             var result = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
 
             var query = result.Text ?? throw new InvalidOperationException("Failed to deserialize slogan result.");

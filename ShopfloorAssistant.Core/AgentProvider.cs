@@ -68,6 +68,39 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             return workflow;
         }
 
+        public async Task<Workflow> GetConcurrentWorkflow()
+        {
+            var agents = new Dictionary<AgentType, object>();
+            var client = _openAIClient
+                    .GetChatClient(_openAiOptions.AgentsModel)
+                    .AsIChatClient();
+            var aiSearchPromptExecutor = await _promptProvider.GetPromptAsync(AgentType.AiSearchQueryExecutor);
+            var aiSearchPromptAnalyzer = await _promptProvider.GetPromptAsync(AgentType.AiSearchQueryAnalyzer);
+
+            var sqlPromptBuilder = await _promptProvider.GetPromptAsync(AgentType.SqlBuilder);
+            var sqlPromptExecutor = await _promptProvider.GetPromptAsync(AgentType.SqlExecuter);
+            var sqlPromptAnylizer = await _promptProvider.GetPromptAsync(AgentType.SqlAnylizer);
+            var promptAnylizer = await _promptProvider.GetPromptAsync(AgentType.Anylizer);
+
+            var aiSearchQueryExecutor = new AISearchQueryExecutor(aiSearchPromptExecutor, "AISearchQueryExecutor", client, _aiSearchService);
+            var aiSearchQueryAnalizer = new AISearchQueryAnalyzer(aiSearchPromptAnalyzer, "AISearchQueryAnalyzer", client);
+
+            var sqlQueryBuilder = new SqlQueryBuilder(sqlPromptBuilder, "SQLQueryBuilder", client);
+            var sqlQueryAnylizer = new SqlQueryAnylizer(sqlPromptAnylizer, "SQLQueryAnylizer", client);
+            _sqlQueryExecutor.Configure(sqlPromptExecutor, client);
+
+            var concurrentStartExecutor = new ConcurrentStartExecutor();
+            var aggregationExecutor = new ConcurrentAggregationExecutor(promptAnylizer, client);
+
+            var workflow = new WorkflowBuilder(concurrentStartExecutor)
+            .AddFanOutEdge(concurrentStartExecutor, targets: [aiSearchQueryExecutor, sqlQueryBuilder])
+            .AddFanInEdge([_sqlQueryExecutor, aiSearchQueryExecutor], aggregationExecutor)
+            .AddEdge(sqlQueryBuilder, _sqlQueryExecutor)
+            .WithOutputFrom(aggregationExecutor)
+            .Build();
+            return workflow;
+
+        }
 
         public async Task<Workflow> GetSqlWorkflow()
         {
@@ -98,7 +131,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                 new StdioClientTransport(new()
                 {
                     Name = "Atlassian MCP",
-                    Command = "mcp-proxy",
+                    Command = "npx",
                     Arguments = [
                         //"http://127.0.0.1:8096/servers/jira/sse"
                         "-y",
@@ -127,6 +160,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             //             { "Authorization",  "Bearer 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"}
             //         }
             //    }));
+
             //await using var mcpClient = await McpClient.CreateAsync(
             //    new HttpClientTransport(new()
             //    {
@@ -134,8 +168,9 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             //        Endpoint = new Uri("https://jira-mcp.kindgrass-76bbda58.westeurope.azurecontainerapps.io/mcp"),
             //        TransportMode = HttpTransportMode.StreamableHttp
             //    }));
-
+            
             var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+            
             AIAgent agent = _openAIClient
              .GetChatClient("gpt-4o-mini")
              .CreateAIAgent(instructions: "You answer questions related to Github MCP only.", tools: [.. mcpTools.Cast<AITool>()]);

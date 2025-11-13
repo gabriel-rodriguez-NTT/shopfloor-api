@@ -7,6 +7,7 @@
         AiSearchQueryAnalyzer,
         SqlBuilder,
         SqlExecuter,
-        SqlAnylizer
+        SqlAnylizer,
+        Anylizer
     }
 }

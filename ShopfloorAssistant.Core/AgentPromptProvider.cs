@@ -20,7 +20,8 @@ namespace ShopfloorAssistant.Core
                 { AgentType.AiSearchQueryAnalyzer, Path.Combine(baseDirectory, "ai_search_prompt_analyzer.txt") },
                 { AgentType.SqlBuilder, Path.Combine(baseDirectory, "sql_builder_prompt.txt") },
                 { AgentType.SqlExecuter, Path.Combine(baseDirectory, "sql_executer_prompt.txt") },
-                { AgentType.SqlAnylizer, Path.Combine(baseDirectory, "sql_anylizer_prompt.txt") }
+                { AgentType.SqlAnylizer, Path.Combine(baseDirectory, "sql_anylizer_prompt.txt") },
+                { AgentType.Anylizer, Path.Combine(baseDirectory, "analyzer_prompt.txt") }
             };
 
             _rolePromptFiles = new Dictionary<UserRole, string>

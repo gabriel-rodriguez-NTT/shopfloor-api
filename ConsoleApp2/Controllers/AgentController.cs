@@ -46,5 +46,12 @@ namespace ConsoleApp2.Controllers
             var result = await _agentAppService.RunWorkflowAsync("sql-search", message);
             return Ok(result);
         }
+
+        [HttpGet("concurrent-workflow")]
+        public async Task<IActionResult> Concurrent([FromQuery] string message)
+        {
+            var result = await _agentAppService.RunWorkflowAsync("concurrent", message);
+            return Ok(result);
+        }
     }
 }

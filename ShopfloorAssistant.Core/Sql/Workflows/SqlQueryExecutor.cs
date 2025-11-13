@@ -37,7 +37,8 @@ namespace ShopfloorAssistant.Core.Workflows
 
         public override async ValueTask<SqlQueryResult> HandleAsync(SqlQueryResult sqlQueryResult, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            await context.YieldOutputAsync($"[SQL Agent (Executor)]: Executing SQL query \n\t{sqlQueryResult.Query}...", cancellationToken);
+            await context.YieldOutputAsync($"[SQL Agent (Executor)]: Executing SQL query...", cancellationToken);
+            Console.WriteLine($"[SQL Agent (Executor)]: Executing SQL query...", cancellationToken);
             var message = $"""
                 User question: {sqlQueryResult.UserInput}
                 Query: {sqlQueryResult.Query}
@@ -47,6 +48,7 @@ namespace ShopfloorAssistant.Core.Workflows
             sqlQueryResult.QueryResult = response.Text;
 
             await context.YieldOutputAsync($"[SQL Agent (Executor)]: SQL query executed", cancellationToken);
+            Console.WriteLine($"[SQL Agent (Executor)]: SQL query executed", cancellationToken);
 
             //await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
             
