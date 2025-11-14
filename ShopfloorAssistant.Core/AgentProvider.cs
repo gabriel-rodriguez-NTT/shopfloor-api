@@ -53,16 +53,6 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             var aiSearchQueryExecutor = new AISearchQueryExecutor(aiSearchPromptExecutor, "AISearchQueryExecutor", client, _aiSearchService);
             var aiSearchQueryAnalizer = new AISearchQueryAnalyzer(aiSearchPromptAnalyzer, "AISearchQueryAnalyzer", client);
 
-            //var concurrentStartExecutor = new ConcurrentStartExecutor();
-            //var aggregationExecutor = new ConcurrentAggregationExecutor();
-
-            //var workflow = new WorkflowBuilder(concurrentStartExecutor)
-            //.AddFanOutEdge(concurrentStartExecutor, targets: [aiSearchQueryBuilder, sqlQueryBuilder])
-            //.AddFanInEdge(aggregationExecutor, sources: [aiSearchQueryExecutor, sqlQueryBuilder])
-            //.AddEdge(aiSearchQueryBuilder, aiSearchQueryExecutor)
-            //.WithOutputFrom(aggregationExecutor)
-            //.Build();
-
             var workflow = new WorkflowBuilder(aiSearchQueryExecutor)
             .AddEdge(aiSearchQueryExecutor, aiSearchQueryAnalizer)
             .WithOutputFrom(aiSearchQueryAnalizer)
@@ -93,11 +83,15 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             _sqlQueryExecutor.Configure(sqlPromptExecutor, client);
 
             var concurrentStartExecutor = new ConcurrentStartExecutor();
-            var aggregationExecutor = new ConcurrentAggregationExecutor(promptAnylizer, client);
+            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions);
+            await aggregationExecutor.Configure(promptAnylizer, client);
+
+            var mcpAgent = new McpExecutor(_openAIClient, _mcpOptions);
+            await mcpAgent.Configure();
 
             var workflow = new WorkflowBuilder(concurrentStartExecutor)
-            .AddFanOutEdge(concurrentStartExecutor, targets: [aiSearchQueryExecutor, sqlQueryBuilder])
-            .AddFanInEdge([_sqlQueryExecutor, aiSearchQueryExecutor], aggregationExecutor)
+            .AddFanOutEdge(concurrentStartExecutor, targets: [aiSearchQueryExecutor, sqlQueryBuilder, mcpAgent])
+            .AddFanInEdge([_sqlQueryExecutor, aiSearchQueryExecutor, mcpAgent], aggregationExecutor)
             .AddEdge(sqlQueryBuilder, _sqlQueryExecutor)
             .WithOutputFrom(aggregationExecutor)
             .Build();

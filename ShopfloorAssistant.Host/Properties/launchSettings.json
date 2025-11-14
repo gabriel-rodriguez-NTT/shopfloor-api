@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "ConsoleApp2": {
+    "ShopfloorAssistant.Host": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
