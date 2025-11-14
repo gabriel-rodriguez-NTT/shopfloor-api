@@ -38,6 +38,7 @@ AI Search Result:
 Treat this as documentation or unstructured text. Identify relevant information, instructions, or explanations related to the user’s question.
 
 Jira Result:
+The corporate jira url is https://nttdsi.atlassian.net, use this URL in case the user needs links to jira issues or references.
 All information of JIRA obtained of tools
 
 Integrate the two sources.

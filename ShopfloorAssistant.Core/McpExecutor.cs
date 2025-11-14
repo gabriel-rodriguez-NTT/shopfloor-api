@@ -7,6 +7,7 @@ using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using OpenAI;
 using OpenAI.Chat;
+using OpenAI.Responses;
 using ShopfloorAssistant.Core.AiSearch;
 using System.Text.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -19,6 +20,8 @@ namespace ShopfloorAssistant.Core
         private AgentThread _thread;
         private readonly McpOptions _mcpOptions;
         private readonly AzureOpenAIClient _chatClient;
+        private McpClient _mcpClient;
+        private IList<McpClientTool>? _mcpTools;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FeedbackExecutor"/> class.
@@ -33,7 +36,7 @@ namespace ShopfloorAssistant.Core
 
         public async Task Configure()
         {
-            await using var mcpClient = await McpClient.CreateAsync(
+            _mcpClient = await McpClient.CreateAsync(
             new HttpClientTransport(new()
             {
                 Name = _mcpOptions.Name,
@@ -41,17 +44,11 @@ namespace ShopfloorAssistant.Core
                 TransportMode = HttpTransportMode.StreamableHttp
             }));
 
-            var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+            _mcpTools = await _mcpClient.ListToolsAsync().ConfigureAwait(false);
 
-            //ChatClientAgentOptions agentOptions = new(
-            //    instructions: _mcpOptions.Instructions, tools: [..mcpTools.Cast<AITool>()])
-            //{
-            //};
-
-            //_agent = new ChatClientAgent(_chatClient, agentOptions);
             _agent = _chatClient
                 .GetChatClient(_mcpOptions.ModelName)
-                .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. mcpTools.Cast<AITool>()]);
+                .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. _mcpTools.Cast<AITool>()]);
             _thread = _agent.GetNewThread();
         }
 
@@ -62,7 +59,22 @@ namespace ShopfloorAssistant.Core
         {
             await context.YieldOutputAsync($"[MCP Agent]: Executing Jira agent...", cancellationToken);
             Console.WriteLine($"[MCP Agent]: Executing Jira agent...", cancellationToken);
-            
+
+            //await using var mcpClient = await McpClient.CreateAsync(
+            //new HttpClientTransport(new()
+            //{
+            //    Name = _mcpOptions.Name,
+            //    Endpoint = new Uri(_mcpOptions.Endpoint),
+            //    TransportMode = HttpTransportMode.StreamableHttp
+            //}));
+
+            //var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+
+            //_agent = _chatClient
+            //    .GetChatClient(_mcpOptions.ModelName)
+            //    .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. mcpTools.Cast<AITool>()]);
+            //_thread = _agent.GetNewThread();
+
             var response = await _agent.RunAsync(query, cancellationToken: cancellationToken);
             
             await context.YieldOutputAsync($"[MCP Agent]: Jira agent executed...", cancellationToken);
