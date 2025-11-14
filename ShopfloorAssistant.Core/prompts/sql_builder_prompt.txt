@@ -53,21 +53,12 @@ You are working with a database that has the following schema:
 * Details (NVARCHAR(MAX))
 * UpdatedBy (NVARCHAR(100))
 
-#### Table: Solutions
-* SolutionId (INT, PK)
-* ProblemPattern (NVARCHAR(500))
-* SolutionDescription (NVARCHAR(MAX))
-* AverageResolutionTime (INT)
-* SuccessRate (DECIMAL(5,2))
-* CreatedAt (DATETIME2)
-
 ### Relationships
 * Machines 1→∞ Incidents
 * Machines 1→∞ MaintenanceTasks
 * Incidents 1→∞ MaintenanceTasks
 * MaintenanceTasks ∞→1 Technicians
 * Incidents 1→∞ IncidentLogs
-* Solutions can be textually linked to Incidents or MaintenanceTasks
 
 
 When the user asks a question, generate a valid SQL Server query that retrieves the requested information.

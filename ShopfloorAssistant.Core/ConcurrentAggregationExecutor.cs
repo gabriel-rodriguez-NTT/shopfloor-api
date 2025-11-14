@@ -19,55 +19,29 @@ namespace ShopfloorAssistant.Core
         private AIAgent _agent;
         private AgentThread _thread;
         private McpOptions _mcpOptions;
-        //private IEmailService _emailService;
+        private IEmailService _emailService;
 
-        public ConcurrentAggregationExecutor(McpOptions mcpOptions) : base("ConcurrentAggregationExecutor")
+        public ConcurrentAggregationExecutor(McpOptions mcpOptions, IEmailService emailService) : base("ConcurrentAggregationExecutor")
         {
             _mcpOptions = mcpOptions;
-            //_emailService = emailService;
-
-            //Func<string, string, string, Task<bool>> searchDelegate = _emailService.SendEmailAsync;
-
-            //var aiFunction = AIFunctionFactory.Create(searchDelegate);
-
-            //ChatClientAgentOptions agentOptions = new(
-            //    instructions: instructions,
-            //    name: "SqlExecuter",
-            //    description: "An agent that executes SQL code.",
-            //    tools: [aiFunction])
-            //{If user also wants to send a email with response use email tool. If user don't provide his email use email extractor tool.
-            //};
-
-            //_agent = new ChatClientAgent(chatClient, agentOptions);
-            //_thread = _agent.GetNewThread();
-            
+            _emailService = emailService;
         }
 
         public async Task Configure(string instructions, IChatClient chatClient)
         {
+            Func<string, string, string, Task<bool>> searchDelegate = _emailService.SendEmailAsync;
+            var aiFunction = AIFunctionFactory.Create(searchDelegate);
+
             ChatClientAgentOptions agentOptions = new(
                 instructions: instructions,
                 name: "Anylizer",
-                description: "An agent that analyzes SQL and AI Search results.")
+                description: "An agent that analyzes SQL and AI Search results.",
+                tools: [aiFunction])
             {
             };
 
             _agent = new ChatClientAgent(chatClient, agentOptions);
             _thread = _agent.GetNewThread();
-        }
-
-        private async Task<IList<McpClientTool>> GetAtlassianTools()
-        {
-            await using var mcpClient = await McpClient.CreateAsync(
-                new HttpClientTransport(new()
-                {
-                    Name = _mcpOptions.Name,
-                    Endpoint = new Uri(_mcpOptions.Endpoint),
-                    TransportMode = HttpTransportMode.StreamableHttp
-                }));
-
-            var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-            return mcpTools;
         }
 
         protected override RouteBuilder ConfigureRoutes(RouteBuilder routeBuilder) =>

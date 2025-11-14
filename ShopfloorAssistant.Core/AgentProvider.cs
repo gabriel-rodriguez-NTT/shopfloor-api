@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using OpenAI;
 using ShopfloorAssistant.Core.AiSearch;
+using ShopfloorAssistant.Core.Email;
 using ShopfloorAssistant.Core.Workflows;
 using System.ClientModel;
 
@@ -17,6 +18,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         private readonly AzureOpenAIClient _openAIClient;
         private readonly SqlQueryExecutor _sqlQueryExecutor;
         private readonly IAiSearchService _aiSearchService;
+        private readonly IEmailService _emailService;
         private readonly OpenAiOptions _openAiOptions;
         private readonly McpOptions _mcpOptions;
 
@@ -25,10 +27,12 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             IOptions<McpOptions> mcpOptions,
             IAgentPromptProvider promptProvider,
             SqlQueryExecutor sqlQueryExecutor,
-            IAiSearchService aiSearchService
+            IAiSearchService aiSearchService,
+            IEmailService emailService
         )
         {
             _promptProvider = promptProvider;
+            _emailService = emailService;
             _openAiOptions = openAiOptions.Value ?? throw new ArgumentNullException(nameof(openAiOptions));
             _mcpOptions = mcpOptions.Value ?? throw new ArgumentNullException(nameof(mcpOptions));
             var endpoint = _openAiOptions.Endpoint;
@@ -83,7 +87,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             _sqlQueryExecutor.Configure(sqlPromptExecutor, client);
 
             var concurrentStartExecutor = new ConcurrentStartExecutor();
-            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions);
+            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions, _emailService);
             await aggregationExecutor.Configure(promptAnylizer, client);
 
             var mcpAgent = new McpExecutor(_openAIClient, _mcpOptions);
