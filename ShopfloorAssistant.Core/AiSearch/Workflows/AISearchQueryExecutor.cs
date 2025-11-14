@@ -26,10 +26,6 @@ namespace ShopfloorAssistant.Core.Workflows
             ChatClientAgentOptions agentOptions = new(
                 instructions: instructions, tools: [aiFunction])
             {
-                //ChatOptions = new()
-                //{
-                //    ResponseFormat = ChatResponseFormat.ForJsonSchema<ICollection<AiSearchQueryResult>>()
-                //}
             };
 
             _agent = new ChatClientAgent(chatClient, agentOptions);

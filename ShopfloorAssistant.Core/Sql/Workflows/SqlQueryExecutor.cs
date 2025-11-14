@@ -19,7 +19,7 @@ namespace ShopfloorAssistant.Core.Workflows
         public void Configure(string instructions, IChatClient chatClient)
         {
             Func<string, string> searchDelegate =
-            _sqlQueryService.ExecuteSqlQuery;
+                _sqlQueryService.ExecuteSqlQuery;
 
             var aiFunction = AIFunctionFactory.Create(searchDelegate);
 

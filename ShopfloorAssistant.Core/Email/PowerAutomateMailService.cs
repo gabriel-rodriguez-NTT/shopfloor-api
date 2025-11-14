@@ -42,8 +42,8 @@ namespace ShopfloorAssistant.Core.Email
                 {
                     to = GetEmailFromToken();
                 }
+                body = Markdown.ToHtml(body);
                 var payload = new { to, subject, body };
-                var bodyHtml = Markdown.ToHtml(body);
                 var json = JsonSerializer.Serialize(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -68,6 +68,7 @@ namespace ShopfloorAssistant.Core.Email
             // Obtener todos los posibles claims donde puede venir el rol
             return user.FindAll(ClaimTypes.Email)
                 .Concat(user.FindAll(ClaimTypes.Upn))
+                .Concat(user.FindAll("preferred_username"))
                  .Select(c => c.Value)
                  .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
         }

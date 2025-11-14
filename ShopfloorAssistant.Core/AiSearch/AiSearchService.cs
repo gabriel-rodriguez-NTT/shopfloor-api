@@ -74,7 +74,7 @@ namespace ShopfloorAssistant.Core.AiSearch
                 {
                     response.Add(result.Document);
                 }
-
+                Console.WriteLine("[AI Search Service] AI Search service executed");
                 return JsonSerializer.Serialize(response, new JsonSerializerOptions
                 {
                     WriteIndented = true // opcional: hace que el JSON se vea legible
