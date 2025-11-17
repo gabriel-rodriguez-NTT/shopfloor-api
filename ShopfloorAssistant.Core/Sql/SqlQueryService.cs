@@ -20,7 +20,8 @@ namespace ShopfloorAssistant.Core.Sql
 
         [Description("Executes a SQL query using the configured database connection and returns the results as JSON.")]
         public string ExecuteSqlQuery(
-            [Description("The SQL query to execute.")] string query)
+            [Description("The SQL query to execute.")] string query
+        )
         {
             try
             {
@@ -31,13 +32,13 @@ namespace ShopfloorAssistant.Core.Sql
 
                 using (var connection = new SqlConnection(_sqlQueryOptions.ConnectionString))
                 {
-                    Console.WriteLine($"[SQL Service] Open connection...");
+                    _logger.LogDebug($"[SQL Service] Open connection...");
                     connection.Open();
-                    Console.WriteLine($"[SQL Service] Connection opened, executing query...");
+                    _logger.LogDebug($"[SQL Service] Connection opened, executing query...");
                     using (var command = new SqlCommand(query, connection))
                     using (var reader = command.ExecuteReader())
                     {
-                    Console.WriteLine($"[SQL Service] Reading query results...");
+                        _logger.LogDebug($"[SQL Service] Reading query results...");
                         while (reader.Read())
                         {
                             var row = new Dictionary<string, object>();
@@ -49,7 +50,7 @@ namespace ShopfloorAssistant.Core.Sql
                         }
                     }
                 }
-                Console.WriteLine($"[SQL Service] Returning query results...");
+                _logger.LogDebug($"[SQL Service] Returning query results...");
                 return JsonSerializer.Serialize(results, new JsonSerializerOptions
                 {
                     WriteIndented = true // opcional: salida legible

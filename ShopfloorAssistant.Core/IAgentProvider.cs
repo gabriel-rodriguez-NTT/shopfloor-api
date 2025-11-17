@@ -8,5 +8,6 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         Task<Workflow> GetSqlWorkflow();
         Task<string> McpTest(string input);
         Task<Workflow> GetConcurrentWorkflow();
+        Task<Workflow> GetToolWorkflow();
     }
 }

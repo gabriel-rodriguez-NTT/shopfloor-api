@@ -53,5 +53,12 @@ namespace ShopfloorAssistant.Host.Controllers
             var result = await _agentAppService.RunWorkflowAsync("concurrent", message);
             return Ok(result);
         }
+
+        [HttpGet("tool-workflow")]
+        public async Task<IActionResult> Tool([FromQuery] string message)
+        {
+            var result = await _agentAppService.RunWorkflowAsync("tool", message);
+            return Ok(result);
+        }
     }
 }

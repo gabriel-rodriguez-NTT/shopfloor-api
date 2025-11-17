@@ -17,6 +17,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         private readonly IAgentPromptProvider _promptProvider;
         private readonly AzureOpenAIClient _openAIClient;
         private readonly SqlQueryExecutor _sqlQueryExecutor;
+        private readonly ToolExecutor _toolExecutor;
         private readonly IAiSearchService _aiSearchService;
         private readonly IEmailService _emailService;
         private readonly OpenAiOptions _openAiOptions;
@@ -27,6 +28,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             IOptions<McpOptions> mcpOptions,
             IAgentPromptProvider promptProvider,
             SqlQueryExecutor sqlQueryExecutor,
+            ToolExecutor toolExecutor,
             IAiSearchService aiSearchService,
             IEmailService emailService
         )
@@ -40,12 +42,12 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             _openAIClient = new AzureOpenAIClient(new Uri(endpoint), credential);
             _sqlQueryExecutor = sqlQueryExecutor;
             _aiSearchService = aiSearchService;
+            _toolExecutor = toolExecutor;
         }
 
         public async Task<Workflow> GetAiSearchWorkflow()
         {
             Console.WriteLine($"Creating AI Search Workflow...");
-            var agents = new Dictionary<AgentType, object>();
             var client = _openAIClient
                     .GetChatClient(_openAiOptions.AgentsModel)
                     .AsIChatClient();
@@ -177,6 +179,20 @@ namespace ShopfloorAssistant.Core.AgentsConfig
              .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. mcpTools.Cast<AITool>()]);
             var response = await agent.RunAsync(input);
             return response.Text;
+        }
+        
+        public async Task<Workflow> GetToolWorkflow()
+        {
+            var client = _openAIClient
+                    .GetChatClient(_openAiOptions.AgentsModel)
+                    .AsIChatClient();
+            await _toolExecutor.Configure(client);
+            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions, _emailService);
+            var workflow = new WorkflowBuilder(_toolExecutor)
+                //.AddEdge(_toolExecutor, aggregationExecutor)
+                .WithOutputFrom(_toolExecutor)
+                .Build();
+            return workflow;
         }
     }
 }

@@ -8,6 +8,7 @@
         SqlBuilder,
         SqlExecuter,
         SqlAnylizer,
-        Anylizer
+        Anylizer,
+        Tool
     }
 }

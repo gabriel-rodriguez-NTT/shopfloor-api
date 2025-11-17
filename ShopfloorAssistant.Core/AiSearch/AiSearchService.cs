@@ -19,14 +19,16 @@ namespace ShopfloorAssistant.Core.AiSearch
         private readonly SearchIndexClient _searchIndexClient;
         private readonly AiSearchOptions _aiSearchOptions;
         private readonly OpenAiOptions _openAiOptions;
+        private readonly ILogger<AiSearchService> _logger;
 
-        public AiSearchService(IOptions<AiSearchOptions> aiSearchOptions, IOptions<OpenAiOptions> openAiOptions)
+        public AiSearchService(IOptions<AiSearchOptions> aiSearchOptions, IOptions<OpenAiOptions> openAiOptions, ILogger<AiSearchService> logger)
         {
             _aiSearchOptions = aiSearchOptions.Value ?? throw new ArgumentNullException(nameof(aiSearchOptions));
             _openAiOptions = openAiOptions.Value ?? throw new ArgumentNullException(nameof(openAiOptions));
 
             var credential = new AzureKeyCredential(_aiSearchOptions.APIKey);
             _searchIndexClient = new SearchIndexClient(new Uri(_aiSearchOptions.Endpoint), credential);
+            _logger = logger;
         }
 
         [Description("Executes a search query against an Azure AI Search index using semantic and/or keyword search, and returns the matching results.")]
@@ -53,7 +55,9 @@ namespace ShopfloorAssistant.Core.AiSearch
                 if (isQuerySearchEnabled) searchQuery = userQuestion;
 
                 //Vector Search
+                _logger.LogDebug("[AI Search Service] Vectoring input");
                 var vectorizedResult = GetEmbeddings(userQuestion);
+                _logger.LogDebug("[AI Search Service] Vectoring input done");
                 searchOptions.VectorSearch = new()
                 {
                     Queries = { new VectorizedQuery(vectorizedResult) { KNearestNeighborsCount = vectorTake, Fields = { "content_embedding" } } }
@@ -65,8 +69,10 @@ namespace ShopfloorAssistant.Core.AiSearch
                     SemanticConfigurationName = semanticConfigurationName
                 };
 
+                _logger.LogDebug("[AI Search Service] Executing search in {0}", searchIndex);
                 var _searchClient = _searchIndexClient.GetSearchClient(searchIndex);
                 SearchResults<AISearchResponse> searchResponse = _searchClient.Search<AISearchResponse>(searchQuery, searchOptions);
+                _logger.LogDebug("[AI Search Service] Executed search in {0}", searchIndex);
 
                 var results = searchResponse.GetResults();
 
@@ -74,7 +80,7 @@ namespace ShopfloorAssistant.Core.AiSearch
                 {
                     response.Add(result.Document);
                 }
-                Console.WriteLine("[AI Search Service] AI Search service executed");
+                _logger.LogDebug("[AI Search Service] AI Search service executed");
                 return JsonSerializer.Serialize(response, new JsonSerializerOptions
                 {
                     WriteIndented = true // opcional: hace que el JSON se vea legible
