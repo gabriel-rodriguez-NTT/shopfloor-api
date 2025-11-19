@@ -45,11 +45,11 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             var credential = new ApiKeyCredential(_openAiOptions.AgentModelApiKey);
             _openAIClient = new AzureOpenAIClient(new Uri(endpoint), credential);
 
-            //var options = new OpenAIClientOptions
-            //{
-            //    Endpoint = new Uri(endpoint),
-            //};
-            //_openAIClient = new OpenAIClient(credential, options);
+            var options = new OpenAIClientOptions
+            {
+                Endpoint = new Uri(endpoint),
+            };
+            _openAIClient = new OpenAIClient(credential, options);
             _sqlQueryExecutor = sqlQueryExecutor;
             _aiSearchService = aiSearchService;
             _toolExecutor = toolExecutor;
