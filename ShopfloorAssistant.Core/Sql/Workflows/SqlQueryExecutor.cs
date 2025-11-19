@@ -1,6 +1,7 @@
 ﻿using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using ShopfloorAssistant.Core.Sql;
 
@@ -11,11 +12,13 @@ namespace ShopfloorAssistant.Core.Workflows
         private AIAgent _agent;
         private AgentThread _thread;
         private readonly ISqlQueryService _sqlQueryService;
+        private readonly ILogger<SqlQueryExecutor> _logger;
         private IChatClient _chatClient;
 
-        public SqlQueryExecutor(ISqlQueryService sqlQueryService) : base("SqlQueryExecutor")
+        public SqlQueryExecutor(ISqlQueryService sqlQueryService, ILogger<SqlQueryExecutor> logger) : base("SqlQueryExecutor")
         {
             _sqlQueryService = sqlQueryService;
+            _logger = logger;
         }
 
         public void Configure(string instructions, IChatClient chatClient)
@@ -45,21 +48,16 @@ namespace ShopfloorAssistant.Core.Workflows
 
         public override async ValueTask<SqlQueryResult> HandleAsync(SqlQueryResult sqlQueryResult, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            await context.YieldOutputAsync($"[SQL Agent (Executor)]: Executing SQL query...", cancellationToken);
-            Console.WriteLine($"[SQL Agent (Executor)]: Executing SQL query...", cancellationToken);
-            //var response = await _agent.RunAsync(sqlQueryResult.Query, _thread, cancellationToken: cancellationToken);
-            if (!string.IsNullOrEmpty(sqlQueryResult?.Query))
+            using (_logger.LogElapsed("[SQL Agent (Executor)]: Executing query"))
             {
-                sqlQueryResult.QueryResult = _sqlQueryService.ExecuteSqlQuery(sqlQueryResult.Query);
+                if (!string.IsNullOrEmpty(sqlQueryResult?.Query))
+                {
+                    sqlQueryResult.QueryResult = _sqlQueryService.ExecuteSqlQuery(sqlQueryResult.Query);
+                }
+
+                await context.SendMessageAsync(sqlQueryResult, cancellationToken: cancellationToken);
+                return sqlQueryResult;
             }
-
-            await context.YieldOutputAsync($"[SQL Agent (Executor)]: SQL query executed", cancellationToken);
-            Console.WriteLine($"[SQL Agent (Executor)]: SQL query executed", cancellationToken);
-
-            //await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
-
-            await context.SendMessageAsync(sqlQueryResult, cancellationToken: cancellationToken);
-            return sqlQueryResult;
         }
     }
 }

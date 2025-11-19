@@ -36,59 +36,63 @@ namespace ShopfloorAssistant.Core.AiSearch
             [Description("The user's natural language question or search input. This is used as the query text for the search operation.")] string userQuestion,
             [Description("The name of the Azure AI Search index to execute the query against.")] string searchIndex)
         {
-            bool isSemanticEnabled = _aiSearchOptions.SemanticEnabled;
-            bool isQuerySearchEnabled = _aiSearchOptions.QuerySearchEnabled;
-            string semanticConfigurationName = _aiSearchOptions.SemanticConfigurationName;
-            int take = _aiSearchOptions.Take;
-            int vectorTake = _aiSearchOptions.VectorTake;
-
-            try
+            using (_logger.LogElapsed("[AI Search Service]"))
             {
-                var response = new List<AISearchResponse>();
+                bool isSemanticEnabled = _aiSearchOptions.SemanticEnabled;
+                bool isQuerySearchEnabled = _aiSearchOptions.QuerySearchEnabled;
+                string semanticConfigurationName = _aiSearchOptions.SemanticConfigurationName;
+                int take = _aiSearchOptions.Take;
+                int vectorTake = _aiSearchOptions.VectorTake;
 
-                SearchQueryType queryType = SearchQueryType.Semantic;
-
-                SearchOptions searchOptions = GetSearchOptions(queryType);
-
-                //Query Search
-                string searchQuery = string.Empty;
-                if (isQuerySearchEnabled) searchQuery = userQuestion;
-
-                //Vector Search
-                _logger.LogDebug("[AI Search Service] Vectoring input");
-                var vectorizedResult = GetEmbeddings(userQuestion);
-                _logger.LogDebug("[AI Search Service] Vectoring input done");
-                searchOptions.VectorSearch = new()
+                try
                 {
-                    Queries = { new VectorizedQuery(vectorizedResult) { KNearestNeighborsCount = vectorTake, Fields = { "content_embedding" } } }
-                };
+                    var response = new List<AISearchResponse>();
 
-                //Semantic Search (Reranker)
-                searchOptions.SemanticSearch = new()
-                {
-                    SemanticConfigurationName = semanticConfigurationName
-                };
+                    SearchQueryType queryType = SearchQueryType.Semantic;
 
-                _logger.LogDebug("[AI Search Service] Executing search in {0}", searchIndex);
-                var _searchClient = _searchIndexClient.GetSearchClient(searchIndex);
-                SearchResults<AISearchResponse> searchResponse = _searchClient.Search<AISearchResponse>(searchQuery, searchOptions);
-                _logger.LogDebug("[AI Search Service] Executed search in {0}", searchIndex);
+                    SearchOptions searchOptions = GetSearchOptions(queryType);
 
-                var results = searchResponse.GetResults();
+                    //Query Search
+                    string searchQuery = string.Empty;
+                    if (isQuerySearchEnabled) searchQuery = userQuestion;
 
-                foreach (SearchResult<AISearchResponse> result in results.Take(take))
-                {
-                    response.Add(result.Document);
+                    //Vector Search
+                    using (_logger.LogElapsed("-- [AI Search Service] Vectoring input"))
+                    {
+                        var vectorizedResult = GetEmbeddings(userQuestion);
+                        searchOptions.VectorSearch = new()
+                        {
+                            Queries = { new VectorizedQuery(vectorizedResult) { KNearestNeighborsCount = vectorTake, Fields = { "content_embedding" } } }
+                        };
+                    }
+
+                    //Semantic Search (Reranker)
+                    searchOptions.SemanticSearch = new()
+                    {
+                        SemanticConfigurationName = semanticConfigurationName
+                    };
+
+                    using (_logger.LogElapsed($"-- [AI Search Service] Executing search in {searchIndex}"))
+                    {
+                        var _searchClient = _searchIndexClient.GetSearchClient(searchIndex);
+                        SearchResults<AISearchResponse> searchResponse = _searchClient.Search<AISearchResponse>(searchQuery, searchOptions);
+
+                        var results = searchResponse.GetResults();
+
+                        foreach (SearchResult<AISearchResponse> result in results.Take(take))
+                        {
+                            response.Add(result.Document);
+                        }
+                    }
+                    return JsonSerializer.Serialize(response, new JsonSerializerOptions
+                    {
+                        WriteIndented = true // opcional: hace que el JSON se vea legible
+                    });
                 }
-                _logger.LogDebug("[AI Search Service] AI Search service executed");
-                return JsonSerializer.Serialize(response, new JsonSerializerOptions
+                catch (RequestFailedException ex)
                 {
-                    WriteIndented = true // opcional: hace que el JSON se vea legible
-                });
-            }
-            catch (RequestFailedException ex)
-            {
-                throw;
+                    throw;
+                }
             }
         }
 

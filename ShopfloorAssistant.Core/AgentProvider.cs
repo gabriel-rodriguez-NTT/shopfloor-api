@@ -2,6 +2,7 @@
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using OpenAI;
@@ -18,6 +19,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         private readonly OpenAIClient _openAIClient;
         private readonly SqlQueryExecutor _sqlQueryExecutor;
         private readonly ToolExecutor _toolExecutor;
+        private readonly ILogger _logger;
         private readonly IAiSearchService _aiSearchService;
         private readonly IEmailService _emailService;
         private readonly OpenAiOptions _openAiOptions;
@@ -30,7 +32,8 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             SqlQueryExecutor sqlQueryExecutor,
             ToolExecutor toolExecutor,
             IAiSearchService aiSearchService,
-            IEmailService emailService
+            IEmailService emailService,
+            ILogger<AgentProvider> logger
         )
         {
             _promptProvider = promptProvider;
@@ -50,6 +53,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             _sqlQueryExecutor = sqlQueryExecutor;
             _aiSearchService = aiSearchService;
             _toolExecutor = toolExecutor;
+            _logger = logger;
         }
 
         public async Task<Workflow> GetAiSearchWorkflow()
@@ -63,8 +67,8 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             var aiSearchPromptAnalyzer = await _promptProvider.GetPromptAsync(AgentType.AiSearchQueryAnalyzer);
 
             //var aiSearchQueryBuilder = new AiSearchQueryBuilder(aiSearchPromptBuilder, "AiSearchQueryBuilder", client);
-            var aiSearchQueryExecutor = new AISearchQueryExecutor(aiSearchPromptExecutor, "AISearchQueryExecutor", client, _aiSearchService);
-            var aiSearchQueryAnalizer = new AISearchQueryAnalyzer(aiSearchPromptAnalyzer, "AISearchQueryAnalyzer", client);
+            var aiSearchQueryExecutor = new AISearchQueryExecutor(aiSearchPromptExecutor, "AISearchQueryExecutor", client, _aiSearchService, _logger);
+            var aiSearchQueryAnalizer = new AISearchQueryAnalyzer(aiSearchPromptAnalyzer, "AISearchQueryAnalyzer", client, _logger);
 
             var workflow = new WorkflowBuilder(aiSearchQueryExecutor)
             .AddEdge(aiSearchQueryExecutor, aiSearchQueryAnalizer)
@@ -88,18 +92,18 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             var sqlPromptAnylizer = await _promptProvider.GetPromptAsync(AgentType.SqlAnylizer);
             var promptAnylizer = await _promptProvider.GetPromptAsync(AgentType.Anylizer);
 
-            var aiSearchQueryExecutor = new AISearchQueryExecutor(aiSearchPromptExecutor, "AISearchQueryExecutor", client, _aiSearchService);
-            var aiSearchQueryAnalizer = new AISearchQueryAnalyzer(aiSearchPromptAnalyzer, "AISearchQueryAnalyzer", client);
+            var aiSearchQueryExecutor = new AISearchQueryExecutor(aiSearchPromptExecutor, "AISearchQueryExecutor", client, _aiSearchService, _logger);
+            var aiSearchQueryAnalizer = new AISearchQueryAnalyzer(aiSearchPromptAnalyzer, "AISearchQueryAnalyzer", client, _logger);
 
-            var sqlQueryBuilder = new SqlQueryBuilder(sqlPromptBuilder, "SQLQueryBuilder", client);
-            var sqlQueryAnylizer = new SqlQueryAnylizer(sqlPromptAnylizer, "SQLQueryAnylizer", client);
+            var sqlQueryBuilder = new SqlQueryBuilder(sqlPromptBuilder, "SQLQueryBuilder", client, _logger);
+            var sqlQueryAnylizer = new SqlQueryAnylizer(sqlPromptAnylizer, "SQLQueryAnylizer", client, _logger);
             _sqlQueryExecutor.Configure(sqlPromptExecutor, client);
 
             var concurrentStartExecutor = new ConcurrentStartExecutor();
-            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions, _emailService);
+            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions, _emailService, _logger);
             await aggregationExecutor.Configure(promptAnylizer, client);
 
-            var mcpAgent = new McpExecutor(_openAIClient, _mcpOptions);
+            var mcpAgent = new McpExecutor(_openAIClient, _mcpOptions, _logger);
             await mcpAgent.Configure();
 
             var workflow = new WorkflowBuilder(concurrentStartExecutor)
@@ -122,8 +126,8 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             var sqlPromptExecutor = await _promptProvider.GetPromptAsync(AgentType.SqlExecuter);
             var sqlPromptAnylizer = await _promptProvider.GetPromptAsync(AgentType.SqlAnylizer);
 
-            var sqlQueryBuilder = new SqlQueryBuilder(sqlPromptBuilder, "SQLQueryBuilder", client);
-            var sqlQueryAnylizer = new SqlQueryAnylizer(sqlPromptAnylizer, "SQLQueryAnylizer", client);
+            var sqlQueryBuilder = new SqlQueryBuilder(sqlPromptBuilder, "SQLQueryBuilder", client, _logger);
+            var sqlQueryAnylizer = new SqlQueryAnylizer(sqlPromptAnylizer, "SQLQueryAnylizer", client, _logger);
             _sqlQueryExecutor.Configure(sqlPromptExecutor, client);
 
             var workflow = new WorkflowBuilder(sqlQueryBuilder)
@@ -194,7 +198,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                     .GetChatClient(_openAiOptions.AgentsModel)
                     .AsIChatClient();
             await _toolExecutor.Configure(client);
-            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions, _emailService);
+            var aggregationExecutor = new ConcurrentAggregationExecutor(_mcpOptions, _emailService, _logger);
             var workflow = new WorkflowBuilder(_toolExecutor)
                 //.AddEdge(_toolExecutor, aggregationExecutor)
                 .WithOutputFrom(_toolExecutor)

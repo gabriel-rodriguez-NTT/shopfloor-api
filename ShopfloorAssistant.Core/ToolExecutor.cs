@@ -1,4 +1,5 @@
-﻿using Microsoft.Agents.AI;
+﻿using Azure.Search.Documents.Indexes.Models;
+using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
@@ -91,15 +92,14 @@ namespace ShopfloorAssistant.Core.Workflows
 
         public override async ValueTask<ToolResult> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            _logger.LogDebug($"[Tool Agent]: Executing Tool Agent...");
-            var response = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
-            //var result = response.Deserialize<ToolResult>(JsonSerializerOptions.Web);
-            _logger.LogDebug($"[Tool Agent]: Executed Tool Agent...");
+            using (_logger.LogElapsed("[Tool Agent]: Executing Tool Agent"))
+            {
+                var response = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
+                await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
 
-            await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
-
-            await context.SendMessageAsync(response.Text, cancellationToken: cancellationToken);
-            return new ToolResult();
+                await context.SendMessageAsync(response.Text, cancellationToken: cancellationToken);
+                return new ToolResult();
+            }
         }
     }
 

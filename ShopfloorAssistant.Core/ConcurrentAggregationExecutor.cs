@@ -1,6 +1,7 @@
 ﻿using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Client;
 using OpenAI.Chat;
 using OpenAI.Responses;
@@ -20,11 +21,13 @@ namespace ShopfloorAssistant.Core
         private AgentThread _thread;
         private McpOptions _mcpOptions;
         private IEmailService _emailService;
+        private readonly ILogger _logger;
 
-        public ConcurrentAggregationExecutor(McpOptions mcpOptions, IEmailService emailService) : base("ConcurrentAggregationExecutor")
+        public ConcurrentAggregationExecutor(McpOptions mcpOptions, IEmailService emailService, ILogger logger) : base("ConcurrentAggregationExecutor")
         {
             _mcpOptions = mcpOptions;
             _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task Configure(string instructions, IChatClient chatClient)
@@ -104,24 +107,21 @@ namespace ShopfloorAssistant.Core
             {
                 return;
             }
-
-            await context.YieldOutputAsync($"[Anylizer Agent]: Anylizing SQL and AI Search...", cancellationToken);
-            Console.WriteLine($"[Anylizer Agent]: Anylizing SQL and AI Search...", cancellationToken);
-            var message = $"""
+            using (_logger.LogElapsed("[[Anylizer Agent]: Anylizing SQL and AI Search"))
+            {
+                var message = $"""
                 User question: {sqlSearchQueryResult.UserInput}
                 QueryResult: {sqlSearchQueryResult.QueryResult}
                 AI Search Result: {aiSearchQueryResult.AiSearchResult}
                 Jira result: {mcpResponse}
-            """;
+                """;
 
-            var response = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
+                var response = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
 
-            await context.YieldOutputAsync($"[Anylizer Agent]: SQL query and AI Search anylized", cancellationToken);
-            Console.WriteLine($"[Anylizer Agent]: SQL query and AI Search anylized", cancellationToken);
+                await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
 
-            await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
-
-            await context.SendMessageAsync(response.Text, cancellationToken: cancellationToken);
+                await context.SendMessageAsync(response.Text, cancellationToken: cancellationToken);
+            }
         }
     }
 }

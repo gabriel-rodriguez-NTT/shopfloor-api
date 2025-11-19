@@ -1,6 +1,7 @@
 ﻿using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using ShopfloorAssistant.Core.AiSearch;
 using System.Text.Json;
@@ -11,6 +12,7 @@ namespace ShopfloorAssistant.Core.Workflows
     {
         private readonly AIAgent _agent;
         private readonly AgentThread _thread;
+        private readonly ILogger _logger;
         private readonly IAiSearchService _aiSearchService;
         private readonly IChatClient _chatClient;
 
@@ -19,12 +21,13 @@ namespace ShopfloorAssistant.Core.Workflows
         /// </summary>
         /// <param name="id">A unique identifier for the executor.</param>
         /// <param name="chatClient">The chat client to use for the AI agent.</param>
-        public AISearchQueryExecutor(string instructions, string id, IChatClient chatClient, IAiSearchService aiSearchService) : base(id)
+        public AISearchQueryExecutor(string instructions, string id, IChatClient chatClient, IAiSearchService aiSearchService, ILogger logger) : base(id)
         {
             _chatClient = chatClient;
             _aiSearchService = aiSearchService;
             _agent = GetAgent(instructions);
             _thread = _agent.GetNewThread();
+            _logger = logger;
         }
 
         public AIAgent GetAgent(string instructions)
@@ -47,22 +50,19 @@ namespace ShopfloorAssistant.Core.Workflows
 
         public async ValueTask<AiSearchQueryResult> HandleAsync(string query, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            await context.YieldOutputAsync($"[AISearch Agent (Executor)]: Executing semantic search...", cancellationToken);
-            Console.WriteLine($"[AISearch Agent (Executor)]: Executing semantic search...", cancellationToken);
-            var response = await _agent.RunAsync(query, _thread, cancellationToken: cancellationToken);
-            await context.YieldOutputAsync($"[AISearch Agent (Executor)]: Semantic search executed...", cancellationToken);
-            Console.WriteLine($"[AISearch Agent (Executor)]: Semantic search executed...", cancellationToken);
-
-            var aiSearchResult = new AiSearchQueryResult()
+            using (_logger.LogElapsed("[AISearch Agent (Executor)]: Executing semantic search"))
             {
-                UserInput = query,
-                AiSearchResult = response.Text
-            };
+                var response = await _agent.RunAsync(query, _thread, cancellationToken: cancellationToken);
 
-            await context.AddEventAsync(new AiSearchExecutedEvent(aiSearchResult), cancellationToken);
+                var aiSearchResult = new AiSearchQueryResult()
+                {
+                    UserInput = query,
+                    AiSearchResult = response.Text
+                };
 
-            //await context.SendMessageAsync(response.Text, cancellationToken: cancellationToken);
-            return aiSearchResult;
+                await context.AddEventAsync(new AiSearchExecutedEvent(aiSearchResult), cancellationToken);
+                return aiSearchResult;
+            }
         }
     }
 

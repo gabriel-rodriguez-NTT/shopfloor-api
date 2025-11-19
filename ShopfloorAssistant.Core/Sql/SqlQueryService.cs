@@ -24,43 +24,51 @@ namespace ShopfloorAssistant.Core.Sql
             [Description("The SQL query to execute.")] string query
         )
         {
-            try
+            using (_logger.LogElapsed("[SQL Service]"))
             {
-                if (string.IsNullOrWhiteSpace(_sqlQueryOptions.ConnectionString))
-                    throw new InvalidOperationException("Connection string is not configured.");
-
-                var results = new List<Dictionary<string, object>>();
-
-                using (var connection = new SqlConnection(_sqlQueryOptions.ConnectionString))
+                try
                 {
-                    _logger.LogDebug($"[SQL Service] Open connection...");
-                    connection.Open();
-                    _logger.LogDebug($"[SQL Service] Connection opened, executing query...");
-                    using (var command = new SqlCommand(query, connection))
-                    using (var reader = command.ExecuteReader())
+                    if (string.IsNullOrWhiteSpace(_sqlQueryOptions.ConnectionString))
+                        throw new InvalidOperationException("Connection string is not configured.");
+
+                    var results = new List<Dictionary<string, object>>();
+
+                    using (var connection = new SqlConnection(_sqlQueryOptions.ConnectionString))
                     {
-                        _logger.LogDebug($"[SQL Service] Reading query results...");
-                        while (reader.Read())
+                        using (_logger.LogElapsed("-- [SQL Service] Open connection"))
                         {
-                            var row = new Dictionary<string, object>();
-                            for (int i = 0; i < reader.FieldCount; i++)
+                            connection.Open();
+                        }
+                        using (var command = new SqlCommand(query, connection))
+                        using (var reader = command.ExecuteReader())
+                        {
+                            using (_logger.LogElapsed("-- [SQL Service] Reading query results"))
                             {
-                                row[reader.GetName(i)] = reader.GetValue(i);
+                                while (reader.Read())
+                                {
+                                    var row = new Dictionary<string, object>();
+                                    for (int i = 0; i < reader.FieldCount; i++)
+                                    {
+                                        row[reader.GetName(i)] = reader.GetValue(i);
+                                    }
+                                    results.Add(row);
+                                }
                             }
-                            results.Add(row);
                         }
                     }
+                    using (_logger.LogElapsed("-- [SQL Service] Returning query results"))
+                    {
+                        return JsonSerializer.Serialize(results, new JsonSerializerOptions
+                        {
+                            WriteIndented = true // opcional: salida legible
+                        });
+                    }
                 }
-                _logger.LogDebug($"[SQL Service] Returning query results...");
-                return JsonSerializer.Serialize(results, new JsonSerializerOptions
+                catch (Exception ex)
                 {
-                    WriteIndented = true // opcional: salida legible
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error executing SQL query");
-                return JsonSerializer.Serialize(new { error = $"SQL query failed: {ex.Message}" });
+                    _logger.LogError(ex, "Error executing SQL query");
+                    return JsonSerializer.Serialize(new { error = $"SQL query failed: {ex.Message}" });
+                }
             }
         }
 

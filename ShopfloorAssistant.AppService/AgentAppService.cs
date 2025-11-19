@@ -1,4 +1,6 @@
 using Microsoft.Agents.AI.Workflows;
+using Microsoft.Extensions.Logging;
+using ShopfloorAssistant.Core;
 using ShopfloorAssistant.Core.AgentsConfig;
 using ShopfloorAssistant.Core.Workflows;
 
@@ -7,10 +9,12 @@ namespace ShopfloorAssistant.AppService
     public class AgentAppService : IAgentAppService
     {
         private readonly IAgentProvider _agentConfigurator;
+        private readonly ILogger<AgentAppService> _logger;
 
-        public AgentAppService(IAgentProvider agentConfigurator)
+        public AgentAppService(IAgentProvider agentConfigurator, ILogger<AgentAppService> logger)
         {
             _agentConfigurator = agentConfigurator ?? throw new ArgumentNullException(nameof(agentConfigurator));
+            _logger = logger;
         }
 
         public async Task<WorkflowEvent> RunWorkflowAsync(string workflowType, string message)
@@ -30,28 +34,29 @@ namespace ShopfloorAssistant.AppService
                 _ => throw new InvalidOperationException($"Invalid workflow type '{workflowType}'.")
             };
 
-            Console.WriteLine($"Running Workflow...");
-            
-            await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, input: message);
-            await foreach (WorkflowEvent evt in run.WatchStreamAsync())
+            using (_logger.LogElapsed($"Running Workflow {workflowType}"))
             {
-                switch (evt)
+                await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, input: message);
+                await foreach (WorkflowEvent evt in run.WatchStreamAsync())
                 {
-                    case WorkflowOutputEvent outputEvent:
-                        //Console.WriteLine($"[Workflow Output]: {outputEvent}");
-                        break;
+                    switch (evt)
+                    {
+                        case WorkflowOutputEvent outputEvent:
+                            //Console.WriteLine($"[Workflow Output]: {outputEvent}");
+                            break;
 
-                    case AiSearchEvent aiSearchEvent:
-                        Console.WriteLine($"[AI Search Event]: {aiSearchEvent}");
-                        return aiSearchEvent;
+                        case AiSearchEvent aiSearchEvent:
+                            //Console.WriteLine($"[AI Search Event]: {aiSearchEvent}");
+                            return aiSearchEvent;
 
-                    case SqlWorkflowEvent sqlWorkflowEvent:
-                        Console.WriteLine($"[SQL Workflow Event]: {sqlWorkflowEvent}");
-                        return sqlWorkflowEvent;
+                        case SqlWorkflowEvent sqlWorkflowEvent:
+                            //Console.WriteLine($"[SQL Workflow Event]: {sqlWorkflowEvent}");
+                            return sqlWorkflowEvent;
+                    }
                 }
-            }
 
-            return new WorkflowEvent("Workflow completed without output events.");
+                return new WorkflowEvent("Workflow completed without output events.");
+            }
         }
 
 

@@ -3,6 +3,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using OpenAI;
@@ -20,6 +21,7 @@ namespace ShopfloorAssistant.Core
         private AgentThread _thread;
         private readonly McpOptions _mcpOptions;
         private readonly OpenAIClient _chatClient;
+        private readonly ILogger _logger;
         private McpClient _mcpClient;
         private IList<McpClientTool>? _mcpTools;
 
@@ -28,10 +30,11 @@ namespace ShopfloorAssistant.Core
         /// </summary>
         /// <param name="id">A unique identifier for the executor.</param>
         /// <param name="chatClient">The chat client to use for the AI agent.</param>
-        public McpExecutor(OpenAIClient chatClient, McpOptions mcpOptions) : base("McpExecuter")
+        public McpExecutor(OpenAIClient chatClient, McpOptions mcpOptions, ILogger logger) : base("McpExecuter")
         {
             _mcpOptions = mcpOptions;
             _chatClient = chatClient;
+            _logger = logger;
         }
 
         public async Task Configure()
@@ -62,33 +65,14 @@ namespace ShopfloorAssistant.Core
 
         public async ValueTask<string> HandleAsync(string query, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            await context.YieldOutputAsync($"[MCP Agent]: Executing Jira agent...", cancellationToken);
-            Console.WriteLine($"[MCP Agent]: Executing Jira agent...", cancellationToken);
+            using (_logger.LogElapsed("[MCP Agent]: Executing Jira agent"))
+            {
+                var response = await _agent.RunAsync(query, cancellationToken: cancellationToken);
 
-            //await using var mcpClient = await McpClient.CreateAsync(
-            //new HttpClientTransport(new()
-            //{
-            //    Name = _mcpOptions.Name,
-            //    Endpoint = new Uri(_mcpOptions.Endpoint),
-            //    TransportMode = HttpTransportMode.StreamableHttp
-            //}));
-
-            //var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-
-            //_agent = _chatClient
-            //    .GetChatClient(_mcpOptions.ModelName)
-            //    .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. mcpTools.Cast<AITool>()]);
-            //_thread = _agent.GetNewThread();
-
-            var response = await _agent.RunAsync(query, cancellationToken: cancellationToken);
-            
-            await context.YieldOutputAsync($"[MCP Agent]: Jira agent executed...", cancellationToken);
-            Console.WriteLine($"[MCP Agent]: Jira agent executed...", cancellationToken);
-
-            await context.AddEventAsync(new WorkflowEvent(response.Text), cancellationToken);
-
-            await context.SendMessageAsync(response.Text, cancellationToken: cancellationToken);
-            return response.Text;
+                await context.AddEventAsync(new WorkflowEvent(response.Text), cancellationToken);
+                await context.SendMessageAsync(response.Text, cancellationToken: cancellationToken);
+                return response.Text;
+            }
         }
     }
 }

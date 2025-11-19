@@ -2,6 +2,7 @@
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using ShopfloorAssistant.Core.Sql;
+using Microsoft.Extensions.Logging;
 
 namespace ShopfloorAssistant.Core.Workflows
 {
@@ -9,8 +10,9 @@ namespace ShopfloorAssistant.Core.Workflows
     {
         private AIAgent _agent;
         private AgentThread _thread;
+        private ILogger _logger;
 
-        public SqlQueryAnylizer(string instructions, string id, IChatClient chatClient) : base(id)
+        public SqlQueryAnylizer(string instructions, string id, IChatClient chatClient, ILogger logger) : base(id)
         {
             ChatClientAgentOptions agentOptions = new(
                 instructions: instructions,
@@ -22,25 +24,25 @@ namespace ShopfloorAssistant.Core.Workflows
 
             _agent = new ChatClientAgent(chatClient, agentOptions);
             _thread = _agent.GetNewThread();
+            _logger = logger;
         }
 
         public override async ValueTask<string> HandleAsync(SqlQueryResult sqlQueryResult, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            await context.YieldOutputAsync($"[SQL Agent (Anylizer)]: Anylizing SQL results \n\t{sqlQueryResult.QueryResult}...", cancellationToken);
-            var message = $"""
+            using (_logger.LogElapsed("[SQL Agent (Anylizer)]: Anylicing query results"))
+            {
+                var message = $"""
                 User question: {sqlQueryResult.UserInput}
                 QueryResult: {sqlQueryResult.QueryResult}
-            """;
+                """;
 
-            var response = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
-            sqlQueryResult.QueryResult = response.Text;
+                var response = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
+                sqlQueryResult.QueryResult = response.Text;
 
-            await context.YieldOutputAsync($"[SQL Agent (Anylizer)]: SQL query anylized", cancellationToken);
-
-            await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
-
-            await context.SendMessageAsync(sqlQueryResult, cancellationToken: cancellationToken);
-            return response.Text;
+                await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
+                await context.SendMessageAsync(sqlQueryResult, cancellationToken: cancellationToken);
+                return response.Text;
+            }
         }
     }
 }

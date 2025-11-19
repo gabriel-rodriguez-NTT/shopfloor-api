@@ -1,7 +1,7 @@
 ﻿using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
-using OpenAI.Chat;
+using Microsoft.Extensions.Logging;
 
 namespace ShopfloorAssistant.Core.Workflows
 {
@@ -10,17 +10,19 @@ namespace ShopfloorAssistant.Core.Workflows
         private readonly AIAgent _agent;
         private readonly AgentThread _thread;
         private readonly IChatClient _chatClient;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SloganWriterExecutor"/> class.
         /// </summary>
         /// <param name="id">A unique identifier for the executor.</param>
         /// <param name="chatClient">The chat client to use for the AI agent.</param>
-        public SqlQueryBuilder(string instructions, string id, IChatClient chatClient) : base(id)
+        public SqlQueryBuilder(string instructions, string id, IChatClient chatClient, ILogger logger) : base(id)
         {
             _chatClient = chatClient;
             _agent = GetAgent(instructions);
             _thread = _agent.GetNewThread();
+            _logger = logger;
         }
 
         public AIAgent GetAgent(string instructions)
@@ -39,21 +41,20 @@ namespace ShopfloorAssistant.Core.Workflows
 
         public async ValueTask<SqlQueryResult> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            await context.YieldOutputAsync($"[SQL Agent (Builder)]: Generating query...", cancellationToken);
-            Console.WriteLine($"[SQL Agent (Builder)]: Generating query...", cancellationToken);
-            var result = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
-
-            var query = result.Text ?? throw new InvalidOperationException("Failed to deserialize slogan result.");
-            await context.YieldOutputAsync($"[SQL Agent (Builder)]: Query generated \n\t{query}", cancellationToken);
-            Console.WriteLine($"[SQL Agent (Builder)]: Query generated \n\t{query}");
-
-            var response = new SqlQueryResult()
+            using (_logger.LogElapsed("[SQL Agent (Builder)]: Generating query"))
             {
-                UserInput = message,
-                Query = query
-            };
-            await context.AddEventAsync(new SqlQueryBuildEvent(response), cancellationToken);
-            return response;
+                var result = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
+
+                var query = result.Text ?? throw new InvalidOperationException("Failed to deserialize slogan result.");
+                var response = new SqlQueryResult()
+                {
+                    UserInput = message,
+                    Query = query
+                };
+                await context.AddEventAsync(new SqlQueryBuildEvent(response), cancellationToken);
+
+                return response;
+            }
         }
     }
 
