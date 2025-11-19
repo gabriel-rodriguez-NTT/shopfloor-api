@@ -31,13 +31,14 @@ namespace ShopfloorAssistant.AppService
             };
 
             Console.WriteLine($"Running Workflow...");
+            
             await using StreamingRun run = await InProcessExecution.StreamAsync(workflow, input: message);
             await foreach (WorkflowEvent evt in run.WatchStreamAsync())
             {
                 switch (evt)
                 {
                     case WorkflowOutputEvent outputEvent:
-                        Console.WriteLine($"[Workflow Output]: {outputEvent}");
+                        //Console.WriteLine($"[Workflow Output]: {outputEvent}");
                         break;
 
                     case AiSearchEvent aiSearchEvent:

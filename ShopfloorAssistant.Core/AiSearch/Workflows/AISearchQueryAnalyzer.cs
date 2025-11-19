@@ -1,6 +1,7 @@
-﻿using Microsoft.Agents.AI.Workflows;
-using Microsoft.Agents.AI;
+﻿using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using OpenAI.Chat;
 
 namespace ShopfloorAssistant.Core.Workflows
 {
@@ -8,6 +9,7 @@ namespace ShopfloorAssistant.Core.Workflows
     {
         private readonly AIAgent _agent;
         private readonly AgentThread _thread;
+        private readonly IChatClient _chatClient;
 
         /// <summary>
         /// 
@@ -17,15 +19,20 @@ namespace ShopfloorAssistant.Core.Workflows
         /// <param name="chatClient"></param>
         public AISearchQueryAnalyzer(string instructions, string id, IChatClient chatClient) : base(id)
         {
+            _chatClient = chatClient;
+            _agent = GetAgent(instructions);
+            _thread = _agent.GetNewThread();
+        }
 
+        public AIAgent GetAgent(string instructions)
+        {
             ChatClientAgentOptions agentOptions = new(
                 instructions: instructions)
             {
 
             };
 
-            _agent = new ChatClientAgent(chatClient, agentOptions);
-            _thread = _agent.GetNewThread();
+            return new ChatClientAgent(_chatClient, agentOptions);
         }
 
         public override async ValueTask<string> HandleAsync(AiSearchQueryResult result, IWorkflowContext context, CancellationToken cancellationToken = default)

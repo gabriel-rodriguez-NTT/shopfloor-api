@@ -43,16 +43,12 @@ namespace ShopfloorAssistant.Core.Workflows
 
         public async Task Configure(IChatClient chatClient)
         {
-            Func<string, string> sqlFunction =
-                _sqlQueryService.ExecuteSqlQuery;
-
             Func<string, string, string> aiSearchFunction =
                 _aiSearchService.ExecuteQuery;
 
             Func<string, string, string, Task<bool>> emailFunction = _emailService.SendEmailAsync;
 
             var emailAiFunction = AIFunctionFactory.Create(emailFunction);
-            var sqlAiFunction = AIFunctionFactory.Create(sqlFunction);
             var aiSearchAiFunction = AIFunctionFactory.Create(aiSearchFunction);
             var instructions = await _agentPromptProvider.GetPromptAsync(AgentType.Tool);
 
@@ -66,7 +62,11 @@ namespace ShopfloorAssistant.Core.Workflows
 
             var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
 
-            IList<AITool> tools = [aiSearchAiFunction, sqlAiFunction, emailAiFunction, ..mcpTools.Cast<AITool>()];
+            IList<AITool> tools = [aiSearchAiFunction
+                , .._sqlQueryService.AsAITools()
+                , emailAiFunction
+                , ..mcpTools.Cast<AITool>()
+                ];
 #pragma warning disable MEAI001 // Este tipo se incluye solo con fines de evaluación y está sujeto a cambios o a que se elimine en próximas actualizaciones. Suprima este diagnóstico para continuar.
             ChatClientAgentOptions agentOptions = new(
                 instructions: instructions,

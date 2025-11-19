@@ -15,7 +15,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
     public class AgentProvider : IAgentProvider
     {
         private readonly IAgentPromptProvider _promptProvider;
-        private readonly AzureOpenAIClient _openAIClient;
+        private readonly OpenAIClient _openAIClient;
         private readonly SqlQueryExecutor _sqlQueryExecutor;
         private readonly ToolExecutor _toolExecutor;
         private readonly IAiSearchService _aiSearchService;
@@ -38,8 +38,15 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             _openAiOptions = openAiOptions.Value ?? throw new ArgumentNullException(nameof(openAiOptions));
             _mcpOptions = mcpOptions.Value ?? throw new ArgumentNullException(nameof(mcpOptions));
             var endpoint = _openAiOptions.Endpoint;
+
             var credential = new ApiKeyCredential(_openAiOptions.AgentModelApiKey);
             _openAIClient = new AzureOpenAIClient(new Uri(endpoint), credential);
+
+            //var options = new OpenAIClientOptions
+            //{
+            //    Endpoint = new Uri(endpoint),
+            //};
+            //_openAIClient = new OpenAIClient(credential, options);
             _sqlQueryExecutor = sqlQueryExecutor;
             _aiSearchService = aiSearchService;
             _toolExecutor = toolExecutor;

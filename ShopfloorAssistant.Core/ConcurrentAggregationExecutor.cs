@@ -47,7 +47,8 @@ namespace ShopfloorAssistant.Core
         protected override RouteBuilder ConfigureRoutes(RouteBuilder routeBuilder) =>
         routeBuilder.AddHandler<AiSearchQueryResult>(HandleAsync)
             .AddHandler<SqlQueryResult>(HandleAsync)
-            .AddHandler<string>(HandleAsync);
+            .AddHandler<string>(HandleAsync)
+            ;
 
         /// <summary>
         /// Handles incoming messages from the agents and aggregates their responses.
@@ -105,6 +106,7 @@ namespace ShopfloorAssistant.Core
             }
 
             await context.YieldOutputAsync($"[Anylizer Agent]: Anylizing SQL and AI Search...", cancellationToken);
+            Console.WriteLine($"[Anylizer Agent]: Anylizing SQL and AI Search...", cancellationToken);
             var message = $"""
                 User question: {sqlSearchQueryResult.UserInput}
                 QueryResult: {sqlSearchQueryResult.QueryResult}
@@ -115,6 +117,7 @@ namespace ShopfloorAssistant.Core
             var response = await _agent.RunAsync(message, _thread, cancellationToken: cancellationToken);
 
             await context.YieldOutputAsync($"[Anylizer Agent]: SQL query and AI Search anylized", cancellationToken);
+            Console.WriteLine($"[Anylizer Agent]: SQL query and AI Search anylized", cancellationToken);
 
             await context.AddEventAsync(new SqlWorkflowEvent(response.Text), cancellationToken);
 

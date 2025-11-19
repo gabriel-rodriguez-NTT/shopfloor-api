@@ -19,7 +19,7 @@ namespace ShopfloorAssistant.Core
         private AIAgent _agent;
         private AgentThread _thread;
         private readonly McpOptions _mcpOptions;
-        private readonly AzureOpenAIClient _chatClient;
+        private readonly OpenAIClient _chatClient;
         private McpClient _mcpClient;
         private IList<McpClientTool>? _mcpTools;
 
@@ -28,13 +28,19 @@ namespace ShopfloorAssistant.Core
         /// </summary>
         /// <param name="id">A unique identifier for the executor.</param>
         /// <param name="chatClient">The chat client to use for the AI agent.</param>
-        public McpExecutor(AzureOpenAIClient chatClient, McpOptions mcpOptions) : base("McpExecuter")
+        public McpExecutor(OpenAIClient chatClient, McpOptions mcpOptions) : base("McpExecuter")
         {
             _mcpOptions = mcpOptions;
             _chatClient = chatClient;
         }
 
         public async Task Configure()
+        {
+            _agent = await GetAgent();
+            _thread = _agent.GetNewThread();
+        }
+
+        public async Task<AIAgent> GetAgent()
         {
             _mcpClient = await McpClient.CreateAsync(
             new HttpClientTransport(new()
@@ -46,10 +52,9 @@ namespace ShopfloorAssistant.Core
 
             _mcpTools = await _mcpClient.ListToolsAsync().ConfigureAwait(false);
 
-            _agent = _chatClient
+            return _chatClient
                 .GetChatClient(_mcpOptions.ModelName)
                 .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. _mcpTools.Cast<AITool>()]);
-            _thread = _agent.GetNewThread();
         }
 
         protected override RouteBuilder ConfigureRoutes(RouteBuilder routeBuilder) =>

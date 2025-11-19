@@ -116,3 +116,4 @@ Rules:
 7. Never include comments, explanations, or natural language—only the SQL query as text.
 8. Machine models are single words withouts whitespaces
 9. Use like and % at the start and the bottom to nvarchar columns
+10. Use Top(N) for number or records

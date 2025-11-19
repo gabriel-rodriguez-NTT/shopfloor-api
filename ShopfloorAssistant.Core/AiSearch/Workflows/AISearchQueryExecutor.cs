@@ -1,8 +1,9 @@
-﻿using Microsoft.Agents.AI.Workflows;
-using Microsoft.Agents.AI;
+﻿using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
-using System.Text.Json;
+using OpenAI.Chat;
 using ShopfloorAssistant.Core.AiSearch;
+using System.Text.Json;
 
 namespace ShopfloorAssistant.Core.Workflows
 {
@@ -10,6 +11,8 @@ namespace ShopfloorAssistant.Core.Workflows
     {
         private readonly AIAgent _agent;
         private readonly AgentThread _thread;
+        private readonly IAiSearchService _aiSearchService;
+        private readonly IChatClient _chatClient;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FeedbackExecutor"/> class.
@@ -18,8 +21,16 @@ namespace ShopfloorAssistant.Core.Workflows
         /// <param name="chatClient">The chat client to use for the AI agent.</param>
         public AISearchQueryExecutor(string instructions, string id, IChatClient chatClient, IAiSearchService aiSearchService) : base(id)
         {
+            _chatClient = chatClient;
+            _aiSearchService = aiSearchService;
+            _agent = GetAgent(instructions);
+            _thread = _agent.GetNewThread();
+        }
+
+        public AIAgent GetAgent(string instructions)
+        {
             Func<string, string, string> searchDelegate =
-            aiSearchService.ExecuteQuery;
+            _aiSearchService.ExecuteQuery;
 
             var aiFunction = AIFunctionFactory.Create(searchDelegate);
 
@@ -28,8 +39,7 @@ namespace ShopfloorAssistant.Core.Workflows
             {
             };
 
-            _agent = new ChatClientAgent(chatClient, agentOptions);
-            _thread = _agent.GetNewThread();
+            return new ChatClientAgent(_chatClient, agentOptions);
         }
 
         protected override RouteBuilder ConfigureRoutes(RouteBuilder routeBuilder) =>

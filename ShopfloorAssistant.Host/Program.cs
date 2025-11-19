@@ -107,7 +107,7 @@ builder.Services.AddTransient<IAiSearchService, AiSearchService>();
 
 builder.Services.AddSingleton<IAgentProvider, AgentProvider>();
 builder.Services.AddTransient<IUserRoleService, UserRoleService>();
-builder.Services.AddHttpClient<IEmailService, PowerAutomateMailService>();
+builder.Services.AddHttpClient<IEmailService, PowerAutomateMailService>().SetHandlerLifetime(TimeSpan.FromMinutes(10));
 builder.Services.AddSingleton<IAgentPromptProvider>(provider =>
 {
     var roleService = provider.GetRequiredService<IUserRoleService>();

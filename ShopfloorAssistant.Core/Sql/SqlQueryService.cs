@@ -1,8 +1,9 @@
-﻿using System.ComponentModel;
-using System.Text.Json;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
-using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
+using System.ComponentModel;
+using System.Text.Json;
 
 namespace ShopfloorAssistant.Core.Sql
 {
@@ -61,6 +62,11 @@ namespace ShopfloorAssistant.Core.Sql
                 _logger.LogError(ex, "Error executing SQL query");
                 return JsonSerializer.Serialize(new { error = $"SQL query failed: {ex.Message}" });
             }
+        }
+
+        public IEnumerable<AITool> AsAITools()
+        {
+            yield return AIFunctionFactory.Create(this.ExecuteSqlQuery);
         }
     }
 }

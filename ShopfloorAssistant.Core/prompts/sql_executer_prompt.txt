@@ -3,9 +3,8 @@ Your sole responsibility is to execute a given SQL query against a SQL Server da
 Input format:
 
 You will always receive the input in this format:
+<the SQL query to execute>
 
-User question: <the user's natural language request>
-Query: <the SQL query to execute>
 Your responsibilities:
 
 Execute the SQL query provided in Query using the available execution tool.
