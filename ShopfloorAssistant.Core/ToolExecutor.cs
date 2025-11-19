@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using OpenAI.Chat;
 using OpenAI.Responses;
 using ShopfloorAssistant.Core.AiSearch;
 using ShopfloorAssistant.Core.Email;
@@ -44,8 +45,15 @@ namespace ShopfloorAssistant.Core.Workflows
 
         public async Task Configure(IChatClient chatClient)
         {
+            _agent = await GetAgent(chatClient);
+            _thread = _agent.GetNewThread();
+
+        }
+
+        public async Task<AIAgent> GetAgent(IChatClient chatClient)
+        {
             Func<string, string, string> aiSearchFunction =
-                _aiSearchService.ExecuteQuery;
+                           _aiSearchService.ExecuteQuery;
 
             Func<string, string, string, Task<bool>> emailFunction = _emailService.SendEmailAsync;
 
@@ -86,8 +94,7 @@ namespace ShopfloorAssistant.Core.Workflows
             };
 #pragma warning restore MEAI001 // Este tipo se incluye solo con fines de evaluación y está sujeto a cambios o a que se elimine en próximas actualizaciones. Suprima este diagnóstico para continuar.
 
-            _agent = new ChatClientAgent(chatClient, agentOptions);
-            _thread = _agent.GetNewThread();
+            return new ChatClientAgent(chatClient, agentOptions);
         }
 
         public override async ValueTask<ToolResult> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = default)
