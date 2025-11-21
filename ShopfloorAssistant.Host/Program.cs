@@ -142,7 +142,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 var agentProvider = app.Services.GetRequiredService<IAgentProvider>();
-app.MapAGUI("/", await agentProvider.GetShopfloorAgent());
+app.MapAGUI("/", await agentProvider.GetShopfloorAgent()).RequireAuthorization();
 //app.MapAGUI("/workflow", await agentProvider.GetWorkflowShopfloorAgent());
 
 await app.RunAsync();
