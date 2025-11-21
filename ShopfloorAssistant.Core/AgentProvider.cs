@@ -205,5 +205,38 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                 .Build();
             return workflow;
         }
+
+        public async Task<AIAgent> GetShopfloorAgent()
+        {
+            var client = _openAIClient
+                    .GetChatClient(_openAiOptions.AgentsModel)
+                    .AsIChatClient();
+            var shopfloorAgentPrompt = await _promptProvider.GetPromptAsync(AgentType.Shopfloor);
+
+            Func<string, string, string, Task<string>> emailFunction = _emailService.SendEmailAsync;
+            var emailAiFunction = AIFunctionFactory.Create(emailFunction);
+
+            Func<string, string, string> searchDelegate =
+            _aiSearchService.ExecuteQuery;
+
+            var aiFunction = AIFunctionFactory.Create(searchDelegate);
+            var mcpClient = await McpClient.CreateAsync(
+               new HttpClientTransport(new()
+               {
+                   Name = _mcpOptions.Name,
+                   Endpoint = new Uri(_mcpOptions.Endpoint),
+                   TransportMode = HttpTransportMode.StreamableHttp
+               }));
+
+            var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+            //mcpTools = mcpTools.Where(t => t.Name.Contains("jira")).ToList();
+
+            ChatClientAgentOptions agentOptions = new(
+                instructions: shopfloorAgentPrompt, tools: [aiFunction, emailAiFunction, .. mcpTools.Cast<AITool>()])
+            {
+            };
+
+            return new ChatClientAgent(client, agentOptions);
+        }
     }
 }

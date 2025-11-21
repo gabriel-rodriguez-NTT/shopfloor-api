@@ -1,4 +1,5 @@
-﻿using Microsoft.Agents.AI.Workflows;
+﻿using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
 
 namespace ShopfloorAssistant.Core.AgentsConfig
 {
@@ -9,5 +10,6 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         Task<string> McpTest(string input);
         Task<Workflow> GetConcurrentWorkflow();
         Task<Workflow> GetToolWorkflow();
+        Task<AIAgent> GetShopfloorAgent();
     }
 }

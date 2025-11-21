@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using Microsoft.OpenApi.Models;
 using ShopfloorAssistant.Core;
@@ -140,5 +141,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+var agentProvider = app.Services.GetRequiredService<IAgentProvider>();
+app.MapAGUI("/", await agentProvider.GetShopfloorAgent());
+//app.MapAGUI("/workflow", await agentProvider.GetWorkflowShopfloorAgent());
 
-app.Run();
+await app.RunAsync();

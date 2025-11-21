@@ -55,7 +55,7 @@ namespace ShopfloorAssistant.Core.Workflows
             Func<string, string, string> aiSearchFunction =
                            _aiSearchService.ExecuteQuery;
 
-            Func<string, string, string, Task<bool>> emailFunction = _emailService.SendEmailAsync;
+            Func<string, string, string, Task<string>> emailFunction = _emailService.SendEmailAsync;
 
             var emailAiFunction = AIFunctionFactory.Create(emailFunction);
             var aiSearchAiFunction = AIFunctionFactory.Create(aiSearchFunction);

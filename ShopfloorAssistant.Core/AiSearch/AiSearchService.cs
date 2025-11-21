@@ -31,9 +31,12 @@ namespace ShopfloorAssistant.Core.AiSearch
             _logger = logger;
         }
 
-        [Description("Executes a search query against an Azure AI Search index using semantic and/or keyword search, and returns the matching results.")]
+        [Description("Use this tool whenever the user asks for information, documents, manuals, reports, or industry facts. It queries the internal knowledge base using semantic search.")]
         public string ExecuteQuery(
-            [Description("The user's natural language question or search input. This is used as the query text for the search operation.")] string userQuestion,
+
+    [Description("A specific, descriptive, and semantic search query optimized for retrieval. Do not use vague terms like 'this' or 'it'. Instead of 'how do I fix it?', use 'how to fix pressure valve maintenance'.")]
+    string userQuestion,
+
             [Description("The name of the Azure AI Search index to execute the query against.")] string searchIndex)
         {
             using (_logger.LogElapsed("[AI Search Service]"))
@@ -84,10 +87,11 @@ namespace ShopfloorAssistant.Core.AiSearch
                             response.Add(result.Document);
                         }
                     }
-                    return JsonSerializer.Serialize(response, new JsonSerializerOptions
+                    var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
                     {
                         WriteIndented = true // opcional: hace que el JSON se vea legible
                     });
+                    return json;
                 }
                 catch (RequestFailedException ex)
                 {

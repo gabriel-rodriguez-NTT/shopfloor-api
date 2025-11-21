@@ -32,7 +32,7 @@ namespace ShopfloorAssistant.Core
 
         public async Task Configure(string instructions, IChatClient chatClient)
         {
-            Func<string, string, string, Task<bool>> searchDelegate = _emailService.SendEmailAsync;
+            Func<string, string, string, Task<string>> searchDelegate = _emailService.SendEmailAsync;
             var aiFunction = AIFunctionFactory.Create(searchDelegate);
 
             ChatClientAgentOptions agentOptions = new(

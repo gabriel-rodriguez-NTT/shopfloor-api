@@ -31,7 +31,7 @@ namespace ShopfloorAssistant.Core.Email
         }
 
         [Description("Sends an email message to a chosen recipient. This function prepares the message, enriches it with the provided subject and content, and dispatches it through the system’s email delivery mechanism.")]
-        public async Task<bool> SendEmailAsync(
+        public async Task<string> SendEmailAsync(
         [Description("The email address of the intended recipient. If omitted, a default address may be used.")] string? to,
         [Description("A short line summarizing the purpose or theme of the message.")] string subject,
         [Description("The main content of the email. This may include plain text, structured text, markdown or HTML-formatted content.")] string body)
@@ -51,11 +51,11 @@ namespace ShopfloorAssistant.Core.Email
 
                 Console.WriteLine($"Email request sent to Power Automate: {response.StatusCode}");
 
-                return response.IsSuccessStatusCode;
+                return response.IsSuccessStatusCode ? "Email sent successfully" : "Error sending email";
             }
             catch (Exception ex)
             {
-                return false;
+                return "Error sending email";
             }
         }
 
@@ -65,7 +65,7 @@ namespace ShopfloorAssistant.Core.Email
             if (user?.Identity?.IsAuthenticated != true)
                 return null;
 
-            // Obtener todos los posibles claims donde puede venir el rol
+            //Obtener todos los posibles claims donde puede venir el rol
             return user.FindAll(ClaimTypes.Email)
                 .Concat(user.FindAll(ClaimTypes.Upn))
                 .Concat(user.FindAll("preferred_username"))

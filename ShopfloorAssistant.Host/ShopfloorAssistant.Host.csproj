@@ -13,6 +13,8 @@
 
     <PackageReference Include="Microsoft.Identity.Web" Version="4.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Agents.AI.AGUI" Version="1.0.0-preview.251114.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="1.0.0-preview.251114.1" />
 
   </ItemGroup>
 

@@ -9,6 +9,7 @@
         SqlExecuter,
         SqlAnylizer,
         Anylizer,
-        Tool
+        Tool,
+        Shopfloor
     }
 }
