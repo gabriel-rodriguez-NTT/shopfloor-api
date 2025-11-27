@@ -34,8 +34,8 @@ namespace ShopfloorAssistant.Core.ChatStore
                     Role = m.Role.Value,
                     Timestamp = m.CreatedAt ?? DateTimeOffset.UtcNow,
                     Message = m.Text,
-                    ThreadId = threadGuid
-
+                    ThreadId = threadGuid,
+                    ToolCallId = m.Contents.Where(x => x is FunctionResultContent).Select(x => x as FunctionResultContent).FirstOrDefault()?.CallId
                 });
                 await _threadRepository.AddMessagesAsync(threadGuid, _session.UserEmail, threadMessages);
             }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using ShopfloorAssistant.Core.ChatStore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,14 +18,14 @@ namespace ShopfloorAssistant.Core.Email
     {
         private readonly HttpClient _httpClient;
         private readonly string _flowUrl;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ShopfloorSession _session;
 
         public PowerAutomateMailService(
             HttpClient httpClient,
             IConfiguration config,
-            IHttpContextAccessor httpContextAccessor)
+            ShopfloorSession session)
         {
-            _httpContextAccessor = httpContextAccessor;
+            _session = session;
             _httpClient = httpClient;
             _flowUrl = config["PowerAutomate:EndpointWorkflow"]
                 ?? throw new InvalidOperationException("Missing PowerAutomate Flow URL in configuration.");
@@ -40,7 +41,7 @@ namespace ShopfloorAssistant.Core.Email
             {
                 if (to == "not@provided.com")
                 {
-                    to = GetEmailFromToken();
+                    to = _session.UserEmail;
                 }
                 body = Markdown.ToHtml(body);
                 var payload = new { to, subject, body };
@@ -57,20 +58,6 @@ namespace ShopfloorAssistant.Core.Email
             {
                 return "Error sending email";
             }
-        }
-
-        private string? GetEmailFromToken()
-        {
-            var user = _httpContextAccessor.HttpContext?.User;
-            if (user?.Identity?.IsAuthenticated != true)
-                return null;
-
-            //Obtener todos los posibles claims donde puede venir el rol
-            return user.FindAll(ClaimTypes.Email)
-                .Concat(user.FindAll(ClaimTypes.Upn))
-                .Concat(user.FindAll("preferred_username"))
-                 .Select(c => c.Value)
-                 .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
         }
     }
 }

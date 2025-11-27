@@ -15,5 +15,6 @@ namespace ShopfloorAssistant.Core.Entities
         public DateTimeOffset? Timestamp { get; set; }
         public string Role { get; set; }
         public virtual Thread Thread { get; set; }
+        public string? ToolCallId { get; internal set; }
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.AI;
 
 namespace ShopfloorAssistant.AppService
 {
-    public class ThreadDto
+    public class ThreadDto : AuditableDto
     {
         public Guid Id { get; set; }
         public string Email { get; set; }
@@ -17,5 +17,12 @@ namespace ShopfloorAssistant.AppService
         public string Content { get; set; } = string.Empty;
         public DateTimeOffset? Timestamp { get; set; }
         public string Role { get; set; }
+        public string? ToolCallId { get; set; }
+    }
+
+    public abstract class AuditableDto
+    {
+        public DateTime CreationTime { get; set; }
+        public DateTime? LastModificationTime { get; set; }
     }
 }

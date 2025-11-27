@@ -60,27 +60,17 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API for managing AI Agents and Azure OpenAI workflows."
     });
 
-    var azureAd = builder.Configuration.GetSection("AzureAd");
-    var tenantId = azureAd["TenantId"];
-    var clientId = azureAd["ClientId"];
-
-    c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    // Definición de seguridad tipo Bearer JWT
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Type = SecuritySchemeType.OAuth2,
-        Flows = new OpenApiOAuthFlows
-        {
-            AuthorizationCode = new OpenApiOAuthFlow
-            {
-                AuthorizationUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize"),
-                TokenUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token"),
-                Scopes = new Dictionary<string, string>
-                {
-                    { $"api://{clientId}/.default", "Access the API" }
-                }
-            }
-        }
+        Description = "Ingresa un token JWT en el campo. Ejemplo: Bearer {tu_token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
     });
 
+    // Requerimiento global del token
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -89,13 +79,14 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "oauth2"
+                    Id = "Bearer"
                 }
             },
-            new[] { $"api://{clientId}/.default" }
+            new string[] {}
         }
     });
-}); 
+});
+
 builder.Services.AddControllers();
 var sqlOptions = builder.Configuration.GetSection(SqlQueryOptions.Sql);
 builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection(OpenAiOptions.OpenAI)); 
@@ -136,11 +127,8 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Shopfloor Assistant API v1");
     c.RoutePrefix = string.Empty;
-    c.OAuthClientId(builder.Configuration["AzureAd:ClientId"]);
-    c.OAuthUsePkce(); // Obligatorio si no usas client secret
-    c.OAuthScopeSeparator(" ");
-    c.OAuthAppName("Shopfloor Assistant Swagger UI");
 });
+
 //}
 app.UseCors(MyAllowSpecificOrigins);
 

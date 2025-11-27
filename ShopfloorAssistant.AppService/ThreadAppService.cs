@@ -1,13 +1,16 @@
+using ShopfloorAssistant.Core.ChatStore;
 using ShopfloorAssistant.Core.Repository;
 namespace ShopfloorAssistant.AppService
 {
     public class ThreadAppService : IThreadAppService
     {
         private readonly IThreadRepository _threadRepository;
+        private readonly ShopfloorSession _session;
 
-        public ThreadAppService(IThreadRepository context)
+        public ThreadAppService(IThreadRepository repository, ShopfloorSession session)
         {
-            _threadRepository = context;
+            _threadRepository = repository;
+            _session = session;
         }
 
         public async Task<IEnumerable<ThreadDto>> GetThreadsByUser(string userEmail)
@@ -20,18 +23,27 @@ namespace ShopfloorAssistant.AppService
             {
                 Id = t.Id,
                 Email = t.User, // usando la propiedad correcta
-                Messages = t.Messages.Select(m => new ThreadMessageDto
+                Messages = [.. t.Messages.Select(m => new ThreadMessageDto
                 {
                     Id = m.Id,
                     ThreadId = m.ThreadId,
                     Content = m.Message,
                     Timestamp = m.Timestamp,
-                    Role = m.Role
-                }).ToList()
+                    Role = m.Role,
+                    ToolCallId = m.ToolCallId
+                })]
             });
 
-            return threadDtos.ToList();
+            return [.. threadDtos];
         }
 
+        public async Task<IEnumerable<ThreadDto>> GetThreadsCurrentUser()
+        {
+            if (string.IsNullOrWhiteSpace(_session.UserEmail))
+            {
+                throw new Exception("User email is not set in the session.");
+            }
+            return await this.GetThreadsByUser(_session.UserEmail);
+        }
     }
 }

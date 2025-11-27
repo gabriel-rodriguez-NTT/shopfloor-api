@@ -34,6 +34,13 @@ namespace ShopfloorAssistant.Host.Controllers
             var threads = await _threadAppService.GetThreadsByUser(userEmail);
             return Ok(threads);
         }
+
+        [HttpGet("current-user")]
+        public async Task<IActionResult> GetThreadsCurrentUser()
+        {
+            var threads = await _threadAppService.GetThreadsCurrentUser();
+            return Ok(threads);
+        }
     }
 
 }
