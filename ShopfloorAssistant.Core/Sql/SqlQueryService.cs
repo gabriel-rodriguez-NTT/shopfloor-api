@@ -28,12 +28,12 @@ namespace ShopfloorAssistant.Core.Sql
             {
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(_sqlQueryOptions.ConnectionString))
+                    if (string.IsNullOrWhiteSpace(_sqlQueryOptions.DefaultConnection))
                         throw new InvalidOperationException("Connection string is not configured.");
 
                     var results = new List<Dictionary<string, object>>();
 
-                    using (var connection = new SqlConnection(_sqlQueryOptions.ConnectionString))
+                    using (var connection = new SqlConnection(_sqlQueryOptions.DefaultConnection))
                     {
                         using (_logger.LogElapsed("-- [SQL Service] Open connection"))
                         {

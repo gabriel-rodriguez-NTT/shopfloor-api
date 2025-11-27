@@ -7,9 +7,12 @@ using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using OpenAI;
 using ShopfloorAssistant.Core.AiSearch;
+using ShopfloorAssistant.Core.ChatStore;
 using ShopfloorAssistant.Core.Email;
+using ShopfloorAssistant.Core.Repository;
 using ShopfloorAssistant.Core.Workflows;
 using System.ClientModel;
+using System.Runtime.CompilerServices;
 
 namespace ShopfloorAssistant.Core.AgentsConfig
 {
@@ -24,6 +27,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         private readonly IEmailService _emailService;
         private readonly OpenAiOptions _openAiOptions;
         private readonly McpOptions _mcpOptions;
+        private readonly ShopfloorChatMessageStore _shopfloorChatMessageStore;
 
         public AgentProvider(
             IOptions<OpenAiOptions> openAiOptions,
@@ -33,7 +37,8 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             ToolExecutor toolExecutor,
             IAiSearchService aiSearchService,
             IEmailService emailService,
-            ILogger<AgentProvider> logger
+            ILogger<AgentProvider> logger,
+            ShopfloorChatMessageStore shopfloorChatMessageStore
         )
         {
             _promptProvider = promptProvider;
@@ -54,6 +59,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             _aiSearchService = aiSearchService;
             _toolExecutor = toolExecutor;
             _logger = logger;
+            _shopfloorChatMessageStore = shopfloorChatMessageStore;
         }
 
         public async Task<Workflow> GetAiSearchWorkflow()
@@ -211,6 +217,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             var client = _openAIClient
                     .GetChatClient(_openAiOptions.AgentsModel)
                     .AsIChatClient();
+
             var shopfloorAgentPrompt = await _promptProvider.GetPromptAsync(AgentType.Shopfloor);
 
             Func<string, string, string, Task<string>> emailFunction = _emailService.SendEmailAsync;
@@ -234,9 +241,11 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             ChatClientAgentOptions agentOptions = new(
                 instructions: shopfloorAgentPrompt, tools: [aiFunction, emailAiFunction, .. mcpTools.Cast<AITool>()])
             {
+                ChatMessageStoreFactory = ctx => _shopfloorChatMessageStore
             };
 
-            return new ChatClientAgent(client, agentOptions);
+            var agent =  new ChatClientAgent(client, agentOptions);
+            return agent;
         }
     }
 }

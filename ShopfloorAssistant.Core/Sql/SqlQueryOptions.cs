@@ -2,7 +2,7 @@
 {
     public class SqlQueryOptions
     {
-        public const string Sql = "Sql";
-        public string ConnectionString { get; set; } = string.Empty;
+        public const string Sql = "ConnectionStrings";
+        public string DefaultConnection { get; set; } = string.Empty;
     }
 }

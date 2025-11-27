@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ShopfloorAssistant.Core\ShopfloorAssistant.Core.csproj" />
+    <ProjectReference Include="..\ShopfloorAssistant.EntityFrameworkCore\ShopfloorAssistant.EntityFrameworkCore.csproj" />
   </ItemGroup>
 
 </Project>
