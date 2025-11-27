@@ -4,7 +4,7 @@
     {
         public class AskResponse
         {
-            public string Answer { get; set; }
+public required string Answer { get; set; }
         }
     }
 }

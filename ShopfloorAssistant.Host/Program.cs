@@ -5,9 +5,12 @@ using Microsoft.OpenApi.Models;
 using ShopfloorAssistant.Core;
 using ShopfloorAssistant.Core.AgentsConfig;
 using ShopfloorAssistant.Core.AiSearch;
+using ShopfloorAssistant.Core.ChatStore;
 using ShopfloorAssistant.Core.Email;
+using ShopfloorAssistant.Core.Repository;
 using ShopfloorAssistant.Core.Sql;
 using ShopfloorAssistant.Core.Workflows;
+using ShopfloorAssistant.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,17 +97,21 @@ builder.Services.AddSwaggerGen(c =>
     });
 }); 
 builder.Services.AddControllers();
-
-builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection(OpenAiOptions.OpenAI));
+var sqlOptions = builder.Configuration.GetSection(SqlQueryOptions.Sql);
+builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection(OpenAiOptions.OpenAI)); 
 builder.Services.Configure<SqlQueryOptions>(builder.Configuration.GetSection(SqlQueryOptions.Sql));
 builder.Services.Configure<AiSearchOptions>(builder.Configuration.GetSection(AiSearchOptions.AzureAISearch));
 builder.Services.Configure<McpOptions>(builder.Configuration.GetSection(McpOptions.Mcp));
 
 builder.Services.AddTransient<ShopfloorAssistant.AppService.IAgentAppService, ShopfloorAssistant.AppService.AgentAppService>();
+builder.Services.AddTransient<ShopfloorAssistant.AppService.IThreadAppService, ShopfloorAssistant.AppService.ThreadAppService>();
 builder.Services.AddTransient<ISqlQueryService, SqlQueryService>();
 builder.Services.AddTransient<SqlQueryExecutor>();
 builder.Services.AddTransient<ToolExecutor>();
+builder.Services.AddTransient<ShopfloorChatMessageStore>();
 builder.Services.AddTransient<IAiSearchService, AiSearchService>();
+builder.Services.AddTransient<ShopfloorSession>();
+
 
 builder.Services.AddSingleton<IAgentProvider, AgentProvider>();
 builder.Services.AddTransient<IUserRoleService, UserRoleService>();
@@ -115,7 +122,9 @@ builder.Services.AddSingleton<IAgentPromptProvider>(provider =>
     var baseDir = Path.Combine(AppContext.BaseDirectory, "prompts");
     return new FileAgentPromptProvider(baseDir, roleService);
 });
+builder.Services.AddEntityFrameworkCoreServices(sqlOptions.Get<SqlQueryOptions>()?.DefaultConnection);
 
+builder.Services.AddAGUI();
 var app = builder.Build();
 
 
@@ -141,8 +150,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.ApplyMigrations();
+
 var agentProvider = app.Services.GetRequiredService<IAgentProvider>();
-app.MapAGUI("/", await agentProvider.GetShopfloorAgent()).RequireAuthorization();
-//app.MapAGUI("/workflow", await agentProvider.GetWorkflowShopfloorAgent());
+app.MapAGUI("/", new MyAgent(await agentProvider.GetShopfloorAgent(), app.Services.GetRequiredService<IThreadRepository>())).RequireAuthorization();
 
 await app.RunAsync();
