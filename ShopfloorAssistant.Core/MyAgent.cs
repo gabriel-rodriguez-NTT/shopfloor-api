@@ -31,13 +31,13 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                 var newMessages = messages
                 .Select(m =>
                 {
+                    m.CreatedAt ??= DateTime.UtcNow;
                     var clone = m.Clone();
 
                     clone.AdditionalProperties = new AdditionalPropertiesDictionary
                     {
                         ["ag_ui_thread_id"] = threadId
                     };
-
                     return clone;
                 })
                 .ToList();

@@ -1,7 +1,12 @@
-﻿using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
+﻿using AutoMapper;
+using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.OpenApi.Models;
+using ShopfloorAssistant.AppService;
 using ShopfloorAssistant.Core;
 using ShopfloorAssistant.Core.AgentsConfig;
 using ShopfloorAssistant.Core.AiSearch;
@@ -85,7 +90,18 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+    c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 });
+
+var appServiceAssembly = AppDomain.CurrentDomain
+    .GetAssemblies()
+    .First(a => a.GetName().Name == "ShopfloorAssistant.AppService");
+
+builder.Services.AddAutoMapper(cfg => cfg.AddMaps(appServiceAssembly));
+
 
 builder.Services.AddControllers();
 var sqlOptions = builder.Configuration.GetSection(SqlQueryOptions.Sql);
@@ -95,7 +111,7 @@ builder.Services.Configure<AiSearchOptions>(builder.Configuration.GetSection(AiS
 builder.Services.Configure<McpOptions>(builder.Configuration.GetSection(McpOptions.Mcp));
 
 builder.Services.AddTransient<ShopfloorAssistant.AppService.IAgentAppService, ShopfloorAssistant.AppService.AgentAppService>();
-builder.Services.AddTransient<ShopfloorAssistant.AppService.IThreadAppService, ShopfloorAssistant.AppService.ThreadAppService>();
+builder.Services.AddTransient<ShopfloorAssistant.AppService.IThreadAppService, ThreadAppService>();
 builder.Services.AddTransient<ISqlQueryService, SqlQueryService>();
 builder.Services.AddTransient<SqlQueryExecutor>();
 builder.Services.AddTransient<ToolExecutor>();

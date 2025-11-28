@@ -7,5 +7,14 @@ namespace ShopfloorAssistant.Core.Entities
         public Guid Id { get; set; }
         public string User { get; set; }
         public virtual ICollection<ThreadMessage> Messages { get; set; }
+        public string? Title
+        {
+            get
+            {
+                return Messages
+                    .OrderBy(m => m.Timestamp)      // ordenar por timestamp
+                    .FirstOrDefault()?.Message;    // tomar el primer mensaje
+            }
+        }
     }
 }

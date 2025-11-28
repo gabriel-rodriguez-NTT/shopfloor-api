@@ -56,7 +56,15 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
         public async Task<IEnumerable<Thread>> GetUserThreads(string user)
         {
-            return await _context.Threads.Where(t => t.User == user).Include(t => t.Messages).ToListAsync();
+            return await _context.Threads.Where(t => t.User == user)
+                .Include(t => t.Messages)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<Thread> GetByIdAsync(Guid id)
+        {
+            return await _context.Threads.Include(t => t.Messages).FirstAsync(x => x.Id == id);
         }
     }
 }

@@ -17,6 +17,11 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="1.0.0-preview.251114.1" />
 
   </ItemGroup>
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="..\ShopfloorAssistant.AppService\ShopfloorAssistant.AppService.csproj" />
