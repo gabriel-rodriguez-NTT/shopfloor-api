@@ -26,8 +26,8 @@ public class ThreadAppService : IThreadAppService
     public async Task<IEnumerable<ThreadMessageDto>> GetThreadsMessages(Guid threadId)
     {
         var thread = await _threadRepository.GetByIdAsync(threadId);
-
-        return _mapper.Map<IEnumerable<ThreadMessageDto>>(thread.Messages);
+        var messages = thread.Messages.OrderBy(m => m.Timestamp).ToList();
+        return _mapper.Map<IEnumerable<ThreadMessageDto>>(messages);
     }
 
     public async Task<IEnumerable<ThreadDto>> GetThreadsCurrentUser()
