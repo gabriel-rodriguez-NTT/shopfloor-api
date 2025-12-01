@@ -34,9 +34,24 @@ namespace ShopfloorAssistant.Core.ChatStore
                     Role = m.Role.Value,
                     Timestamp = m.CreatedAt ?? DateTimeOffset.UtcNow,
                     Message = m.Text,
-                    ThreadId = threadGuid,
-                    ToolCallId = m.Contents.Where(x => x is FunctionResultContent).Select(x => x as FunctionResultContent).FirstOrDefault()?.CallId
-                });
+                    //ThreadId = threadGuid,
+                    ToolCallId = m.Contents.Where(x => x is FunctionResultContent).Select(x => x as FunctionResultContent).FirstOrDefault()?.CallId,
+                    ToolCalls = [.. m.Contents.Where(x => x is FunctionCallContent).Select(x => x as FunctionCallContent).Select(x => new Entities.ThreadToolCall()
+                    {
+                        Id = Guid.NewGuid(),
+                        CallId = x.CallId,
+                        Name = x.Name,
+                        Arguments = x.Arguments
+                    }),
+                    ..m.Contents.Where(x => x is FunctionResultContent).Select(x => x as FunctionResultContent).Select(x => new Entities.ThreadToolCall()
+                    {
+                        Id = Guid.NewGuid(),
+                        CallId = x.CallId,
+                        Name = messages.SelectMany(y => y.Contents).Where(y => y is FunctionCallContent).Select(y => y as FunctionCallContent).FirstOrDefault(y => y.CallId == x.CallId)?.Name 
+                        ?? nameof(FunctionResultContent),
+                        Result = x.Result?.ToString()
+                    })]
+                }).ToList();
                 await _threadRepository.AddMessagesAsync(threadGuid, _session.UserEmail, threadMessages);
             }
         }
