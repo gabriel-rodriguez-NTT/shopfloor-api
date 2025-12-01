@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ShopfloorAssistant.Core.Entities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,9 +14,12 @@ namespace ShopfloorAssistant.EntityFrameworkCore
         public DbSet<Thread> Threads { get; set; }
         public DbSet<ThreadMessage> ThreadMessages { get; set; }
 
-        public ShopfloorAssistantDbContext(DbContextOptions<ShopfloorAssistantDbContext> dbContextOptions) : base(dbContextOptions)
-        {
+        // Nuevo DbSet
+        public DbSet<ThreadToolCall> ThreadToolCalls { get; set; }
 
+        public ShopfloorAssistantDbContext(DbContextOptions<ShopfloorAssistantDbContext> dbContextOptions)
+            : base(dbContextOptions)
+        {
         }
 
         public override int SaveChanges()
@@ -52,16 +56,37 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // JsonSerializer options explícitas (evita CS0854)
+            var jsonOptions = new System.Text.Json.JsonSerializerOptions();
+
+            // Thread
             modelBuilder.Entity<Thread>()
-                .HasKey(ut => ut.Id);
+                .HasKey(t => t.Id);
+
+            // ThreadMessage
             modelBuilder.Entity<ThreadMessage>()
                 .HasKey(tm => tm.Id);
 
             modelBuilder.Entity<ThreadMessage>()
-                .HasOne<Thread>(t => t.Thread)
+                .HasOne(tm => tm.Thread)
                 .WithMany(t => t.Messages)
                 .HasForeignKey(tm => tm.ThreadId);
 
+            modelBuilder.Entity<ThreadToolCall>()
+                .HasKey(tc => tc.Id);
+
+            modelBuilder.Entity<ThreadToolCall>()
+                .HasOne(tc => tc.ThreadMessage)
+                .WithMany(tm => tm.ToolCalls)
+                .HasForeignKey(tc => tc.ThreadMessageId);
+
+            modelBuilder.Entity<ThreadToolCall>()
+                .Property(tc => tc.Arguments)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, jsonOptions),
+                    v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions)
+                );
         }
+
     }
 }

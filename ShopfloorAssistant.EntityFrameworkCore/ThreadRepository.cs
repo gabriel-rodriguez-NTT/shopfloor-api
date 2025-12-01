@@ -64,7 +64,10 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
         public async Task<Thread> GetByIdAsync(Guid id)
         {
-            return await _context.Threads.Include(t => t.Messages).FirstAsync(x => x.Id == id);
+            return await _context.Threads
+                .Include(t => t.Messages)
+                .ThenInclude(t => t.ToolCalls)
+                .FirstAsync(x => x.Id == id);
         }
     }
 }
