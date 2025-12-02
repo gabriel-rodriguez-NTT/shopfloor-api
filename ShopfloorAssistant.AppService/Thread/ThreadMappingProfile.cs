@@ -19,6 +19,7 @@ namespace ShopfloorAssistant.AppService
 
             CreateMap<ThreadToolCall, ThreadCallDto>()
            .ForMember(dest => dest.Type, opt => opt.MapFrom(_ => "function"))
+           .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CallId))
            .ForMember(dest => dest.Function, opt => opt.MapFrom(src => src));
 
             CreateMap<ThreadToolCall, ThreadFunctionCallDto>()

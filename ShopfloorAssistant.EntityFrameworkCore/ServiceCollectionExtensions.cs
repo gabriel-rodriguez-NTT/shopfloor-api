@@ -9,7 +9,14 @@ namespace ShopfloorAssistant.EntityFrameworkCore
         public static IServiceCollection AddEntityFrameworkCoreServices(this IServiceCollection services, string connectionString)
         {
             services.AddDbContext<ShopfloorAssistantDbContext>(options =>
-                options.UseSqlServer(connectionString), ServiceLifetime.Transient, ServiceLifetime.Transient);
+                options
+                .UseSqlServer(connectionString)
+#if DEBUG
+                .EnableSensitiveDataLogging()
+#endif
+                , ServiceLifetime.Transient, ServiceLifetime.Transient)
+
+                ;
 
             //services.AddTransient<IThreadRepository, ThreadRepository>();
             services.AddTransient<IThreadRepository, ThreadRepository>();

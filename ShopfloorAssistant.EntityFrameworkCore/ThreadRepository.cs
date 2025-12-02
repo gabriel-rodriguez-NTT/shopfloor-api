@@ -14,45 +14,78 @@ namespace ShopfloorAssistant.EntityFrameworkCore
         {
         }
 
-        public async Task AddMessagesAsync(Guid threadId, string user, IEnumerable<ThreadMessage> messages)
+        public async Task AddMessagesAsync(Guid threadId, string userEmail, IEnumerable<ThreadMessage> incomingMessages)
         {
-            // Cargar el thread con sus mensajes (solo Ids para no gastar memoria)
-            var existingThread = await _context.Threads
+            var thread = await _context.Threads
                 .Include(t => t.Messages)
+                    .ThenInclude(m => m.ToolCalls)
                 .FirstOrDefaultAsync(t => t.Id == threadId);
 
-            if (existingThread == null)
+            if (thread == null)
             {
                 // Crear nuevo thread
                 var newThread = new Thread
                 {
                     Id = threadId,
-                    User = user,
-                    Messages = messages.ToList()
+                    User = userEmail,
+                    CreationTime = DateTime.UtcNow,
+                    Messages = incomingMessages.Select(m =>
+                    {
+                        m.ThreadId = threadId;
+                        m.Thread = null;
+                        foreach (var tc in m.ToolCalls)
+                        {
+                            tc.Id = Guid.NewGuid();
+                            tc.ThreadMessageId = m.Id;
+                            tc.ThreadMessage = null;
+                        }
+                        return m;
+                    }).ToList(),
+                    LastModificationTime = DateTime.UtcNow
                 };
 
                 await _context.Threads.AddAsync(newThread);
             }
             else
             {
-                // Filtrar mensajes ya existentes
-                var existingMessageIds = existingThread.Messages
-                    .Select(m => m.Id)
-                    .ToHashSet();
+                // Filtrar mensajes nuevos
+                var existingIds = thread.Messages.Select(m => m.Id).ToHashSet();
 
-                var newMessages = messages
-                    .Where(m => !existingMessageIds.Contains(m.Id))
+                var newMessages = incomingMessages
+                    .Where(m => !existingIds.Contains(m.Id))
+                    .Select(m =>
+                    {
+                        m.ThreadId = threadId;
+                        m.Thread = null;
+
+                        // Asignar Id a ToolCalls y FK
+                        foreach (var tc in m.ToolCalls)
+                        {
+                            //tc.Id = Guid.NewGuid();
+                            tc.ThreadMessageId = m.Id;
+                            tc.ThreadMessage = null;
+                        }
+
+                        return m;
+                    })
                     .ToList();
 
-                if (newMessages.Any())
+                foreach (var msg in newMessages)
                 {
-                    foreach (var msg in newMessages)
-                        existingThread.Messages.Add(msg);
+                    thread.Messages.Add(msg);
                 }
+
+                // Actualizar LastModificationTime
+                thread.LastModificationTime = DateTime.UtcNow;
+
+                // Evitar que EF intente actualizar el thread completo
+                //_context.Entry(thread).State = EntityState.Unchanged;
+                //_context.Entry(thread).Property(t => t.LastModificationTime).IsModified = true;
             }
 
             await _context.SaveChangesAsync();
         }
+
 
         public async Task<IEnumerable<Thread>> GetUserThreads(string user)
         {

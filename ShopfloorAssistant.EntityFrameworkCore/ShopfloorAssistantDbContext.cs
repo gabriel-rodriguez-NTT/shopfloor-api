@@ -24,13 +24,13 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
         public override int SaveChanges()
         {
-            ApplyAuditInfo();
+            //ApplyAuditInfo();
             return base.SaveChanges();
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            ApplyAuditInfo();
+            //ApplyAuditInfo();
             return base.SaveChangesAsync(cancellationToken);
         }
 
@@ -74,6 +74,10 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
             modelBuilder.Entity<ThreadToolCall>()
                 .HasKey(tc => tc.Id);
+
+            modelBuilder.Entity<ThreadToolCall>()
+                .Property(t => t.Id)
+                .ValueGeneratedOnAdd(); // EF genera valor al agregar
 
             modelBuilder.Entity<ThreadToolCall>()
                 .HasOne(tc => tc.ThreadMessage)

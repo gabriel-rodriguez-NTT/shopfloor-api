@@ -31,7 +31,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                 var newMessages = messages
                 .Select(m =>
                 {
-                    m.CreatedAt ??= DateTime.UtcNow;
+                    m.CreatedAt ??= DateTime.UtcNow;//.AddSeconds(-1);
                     var clone = m.Clone();
 
                     clone.AdditionalProperties = new AdditionalPropertiesDictionary
