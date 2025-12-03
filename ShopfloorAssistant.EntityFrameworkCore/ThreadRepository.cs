@@ -59,12 +59,12 @@ namespace ShopfloorAssistant.EntityFrameworkCore
                         m.Thread = null;
 
                         // Asignar Id a ToolCalls y FK
-                        foreach (var tc in m.ToolCalls)
-                        {
-                            //tc.Id = Guid.NewGuid();
-                            tc.ThreadMessageId = m.Id;
-                            tc.ThreadMessage = null;
-                        }
+                        //foreach (var tc in m.ToolCalls)
+                        //{
+                        //    //tc.Id = Guid.NewGuid();
+                        //    tc.ThreadMessageId = m.Id;
+                        //    tc.ThreadMessage = null;
+                        //}
 
                         return m;
                     })
@@ -100,7 +100,7 @@ namespace ShopfloorAssistant.EntityFrameworkCore
             return await _context.Threads
                 .Include(t => t.Messages)
                 .ThenInclude(t => t.ToolCalls)
-                .FirstAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
     }
 }

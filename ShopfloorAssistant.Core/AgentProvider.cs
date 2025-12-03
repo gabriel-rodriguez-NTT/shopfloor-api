@@ -208,7 +208,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                }));
 
             var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-            mcpTools = mcpTools.Where(t => t.Name.StartsWith("jira_")).ToList();
+            mcpTools = mcpTools.Where(t => t.Name.StartsWith("jira_") && t.Name != "jira_get_project_issues").ToList();
 
             ChatClientAgentOptions agentOptions = new(
                 instructions: shopfloorAgentPrompt, tools: [aiFunction, emailAiFunction, .. mcpTools.Cast<AITool>()])

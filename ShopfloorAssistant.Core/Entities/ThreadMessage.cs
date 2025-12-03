@@ -16,6 +16,7 @@ namespace ShopfloorAssistant.Core.Entities
         public string Role { get; set; }
         public virtual Thread Thread { get; set; }
         public string? ToolCallId { get; set; }
+        public int Order { get; set; }
         public virtual ICollection<ThreadToolCall> ToolCalls { get; set; } = new List<ThreadToolCall>();
     }
 }

@@ -26,7 +26,11 @@ public class ThreadAppService : IThreadAppService
     public async Task<IEnumerable<ThreadMessageDto>> GetThreadsMessages(Guid threadId)
     {
         var thread = await _threadRepository.GetByIdAsync(threadId);
-        var messages = thread.Messages.OrderBy(m => m.Timestamp).ToList();
+        if (thread == null)
+        {
+            return [];
+        }
+        var messages = thread.Messages.OrderBy(m => m.Order).ToList();
 
         var result = new List<ThreadMessageDto>();
 

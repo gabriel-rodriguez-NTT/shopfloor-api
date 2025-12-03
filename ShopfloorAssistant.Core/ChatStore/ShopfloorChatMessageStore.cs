@@ -73,8 +73,8 @@ namespace ShopfloorAssistant.Core.ChatStore
         //}
 
         public override async Task AddMessagesAsync(
-    IEnumerable<ChatMessage> messages,
-    CancellationToken cancellationToken)
+            IEnumerable<ChatMessage> messages,
+            CancellationToken cancellationToken)
         {
             const string threadIdKey = "ag_ui_thread_id";
             var repository = GetThreadRepository();
@@ -89,19 +89,44 @@ namespace ShopfloorAssistant.Core.ChatStore
             {
                 var threadGuid = Guid.Parse(threadId);
 
-                // Convertir ChatMessages a ThreadMessages
+                // 🔥 Obtener thread desde la BD (puede ser null)
+                var existingThread = await repository.GetByIdAsync(threadGuid);
+
+                // 🔥 Si no existe, tratamos como si no hubiera mensajes previos
+                var existingIds = existingThread?.Messages?
+                    .Select(m => m.Id)
+                    .ToHashSet() ?? new HashSet<string>();
+
+                int order = (existingThread?.Messages?.Count > 0)
+                    ? existingThread.Messages.Max(m => m.Order) + 1
+                    : 1;
+
+                var now = DateTimeOffset.UtcNow;
+
                 var threadMessages = messages
                     .Where(m => m.Role != ChatRole.System)
                     .Select(m =>
                     {
+                        var id = m.MessageId ?? Guid.NewGuid().ToString();
+                        bool exists = existingIds.Contains(id);
+
+                        // Si el mensaje ya existe, usar su orden original
+                        int msgOrder = (exists && existingThread != null)
+                            ? existingThread.Messages.First(x => x.Id == id).Order
+                            : order;
+
                         var tm = new ThreadMessage
                         {
-                            Id = m.MessageId ?? Guid.NewGuid().ToString(),
+                            Id = id,
                             Role = m.Role.Value,
-                            Timestamp = m.CreatedAt ?? DateTimeOffset.UtcNow,
+                            Timestamp = m.CreatedAt ?? now,
                             Message = m.Text,
-                            ToolCalls = new List<ThreadToolCall>()
+                            ToolCalls = new List<ThreadToolCall>(),
+                            Order = msgOrder
                         };
+
+                        if (!exists)
+                            order++;
 
                         // Reconstruir ToolCalls
                         foreach (var content in m.Contents)
@@ -110,37 +135,38 @@ namespace ShopfloorAssistant.Core.ChatStore
                             {
                                 tm.ToolCalls.Add(new ThreadToolCall
                                 {
-                                    //Id = Guid.NewGuid(),
                                     CallId = call.CallId,
                                     Name = call.Name,
                                     Arguments = call.Arguments,
-                                    ThreadMessageId = tm.Id,
-                                    ThreadMessage = null
+                                    ThreadMessageId = tm.Id
                                 });
                             }
                             else if (content is FunctionResultContent result)
                             {
                                 tm.ToolCalls.Add(new ThreadToolCall
                                 {
-                                    //Id = Guid.NewGuid(),
                                     CallId = result.CallId,
-                                    Name = messages.SelectMany(y => y.Contents).Where(y => y is FunctionCallContent).Select(y => y as FunctionCallContent).FirstOrDefault(y => y.CallId == result.CallId)?.Name ?? nameof(FunctionResultContent),
+                                    Name = messages
+                                        .SelectMany(y => y.Contents)
+                                        .OfType<FunctionCallContent>()
+                                        .FirstOrDefault(y => y.CallId == result.CallId)?.Name
+                                        ?? nameof(FunctionResultContent),
                                     Result = result.Result?.ToString(),
-                                    ThreadMessageId = tm.Id,
-                                    ThreadMessage = null
+                                    ThreadMessageId = tm.Id
                                 });
                             }
                         }
 
                         return tm;
                     })
+                    // 🔥 Solo enviar nuevos mensajes al repo
+                    .Where(x => !existingIds.Contains(x.Id))
                     .ToList();
 
-                // Llamar al repositorio con ThreadMessages ya listos
-                await repository.AddMessagesAsync(threadGuid, _session.UserEmail, threadMessages);
+                if (threadMessages.Count > 0)
+                    await repository.AddMessagesAsync(threadGuid, _session.UserEmail, threadMessages);
             }
         }
-
 
         public override Task<IEnumerable<ChatMessage>> GetMessagesAsync(CancellationToken cancellationToken = default)
         {
