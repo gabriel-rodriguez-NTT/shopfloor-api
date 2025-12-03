@@ -147,40 +147,13 @@ namespace ShopfloorAssistant.Core.AgentsConfig
 
         public async Task<string> McpTest(string input)
         {
-            //await using var mcpClient = await McpClient.CreateAsync(
-            //    new StdioClientTransport(new()
-            //    {
-            //        Name = "Atlassian MCP",
-            //        Command = "npx",
-            //        Arguments = [
-            //            //"http://127.0.0.1:8096/servers/jira/sse"
-            //            "-y",
-            //            "--verbose",
-            //            "mcp-remote",
-            //            "https://mcp.atlassian.com/v1/sse"
-            //        ]
-            //    }),
-            //    new McpClientOptions()
-            //    {
-            //        ClientInfo = new ModelContextProtocol.Protocol.Implementation()
-            //        {
-            //            Name = ".Net APP Shopfloor",
-            //            Version = "1.0.0.0"
-            //        }
-            //    });
+            AIAgent agent = await GetMcpAgent();
+            var response = await agent.RunAsync(input);
+            return response.Text;
+        }
 
-            //await using var mcpClient = await McpClient.CreateAsync(
-            //    new HttpClientTransport(new()
-            //    {
-            //        Name = "Github",
-            //        Endpoint = new Uri("https://mcp-api-shopfloor.azure-api.net/github/mcp"),
-            //        TransportMode = HttpTransportMode.AutoDetect,
-            //         AdditionalHeaders = new Dictionary<string, string>()
-            //         {
-            //             { "Authorization",  "Bearer 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"}
-            //         }
-            //    }));
-
+        public async Task<AIAgent> GetMcpAgent()
+        {
             await using var mcpClient = await McpClient.CreateAsync(
                 new HttpClientTransport(new()
                 {
@@ -194,8 +167,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
             AIAgent agent = _openAIClient
              .GetChatClient(_mcpOptions.ModelName ?? _openAiOptions.AgentsModel)
              .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. mcpTools.Cast<AITool>()]);
-            var response = await agent.RunAsync(input);
-            return response.Text;
+            return agent;
         }
         
         public async Task<Workflow> GetToolWorkflow()
@@ -236,7 +208,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                }));
 
             var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-            //mcpTools = mcpTools.Where(t => t.Name.Contains("jira")).ToList();
+            mcpTools = mcpTools.Where(t => t.Name.StartsWith("jira_")).ToList();
 
             ChatClientAgentOptions agentOptions = new(
                 instructions: shopfloorAgentPrompt, tools: [aiFunction, emailAiFunction, .. mcpTools.Cast<AITool>()])

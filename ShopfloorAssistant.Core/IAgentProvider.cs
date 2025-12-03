@@ -11,5 +11,6 @@ namespace ShopfloorAssistant.Core.AgentsConfig
         Task<Workflow> GetConcurrentWorkflow();
         Task<Workflow> GetToolWorkflow();
         Task<AIAgent> GetShopfloorAgent();
+        Task<AIAgent> GetMcpAgent();
     }
 }
