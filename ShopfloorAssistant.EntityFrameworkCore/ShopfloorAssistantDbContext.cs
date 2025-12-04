@@ -16,6 +16,7 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
         // Nuevo DbSet
         public DbSet<ThreadToolCall> ThreadToolCalls { get; set; }
+        public DbSet<PromptSuggestion> PromptSuggestions { get; set; }
 
         public ShopfloorAssistantDbContext(DbContextOptions<ShopfloorAssistantDbContext> dbContextOptions)
             : base(dbContextOptions)
@@ -56,7 +57,7 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // JsonSerializer options explícitas (evita CS0854)
+            // JsonSerializer options explÃ­citas (evita CS0854)
             var jsonOptions = new System.Text.Json.JsonSerializerOptions();
 
             // Thread
@@ -86,6 +87,20 @@ namespace ShopfloorAssistant.EntityFrameworkCore
 
             modelBuilder.Entity<ThreadToolCall>()
                 .Property(tc => tc.Arguments)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, jsonOptions),
+                    v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions)
+                );
+
+            modelBuilder.Entity<PromptSuggestion>()
+                .HasKey(ps => ps.Id);
+
+            modelBuilder.Entity<PromptSuggestion>()
+                .Property(ps => ps.Id)
+                .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<PromptSuggestion>()
+                .Property(ps => ps.Metadata)
                 .HasConversion(
                     v => System.Text.Json.JsonSerializer.Serialize(v, jsonOptions),
                     v => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions)
