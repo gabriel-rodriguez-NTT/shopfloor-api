@@ -112,6 +112,7 @@ builder.Services.Configure<McpOptions>(builder.Configuration.GetSection(McpOptio
 
 builder.Services.AddTransient<ShopfloorAssistant.AppService.IAgentAppService, ShopfloorAssistant.AppService.AgentAppService>();
 builder.Services.AddTransient<ShopfloorAssistant.AppService.IThreadAppService, ThreadAppService>();
+builder.Services.AddTransient<ShopfloorAssistant.AppService.IPromptSuggestionAppService, PromptSuggestionAppService>();
 builder.Services.AddTransient<ISqlQueryService, SqlQueryService>();
 builder.Services.AddTransient<SqlQueryExecutor>();
 builder.Services.AddTransient<ToolExecutor>();

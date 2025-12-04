@@ -17,7 +17,7 @@ namespace ShopfloorAssistant.EntityFrameworkCore
                 , ServiceLifetime.Transient, ServiceLifetime.Transient)
 
                 ;
-
+            services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             //services.AddTransient<IThreadRepository, ThreadRepository>();
             services.AddTransient<IThreadRepository, ThreadRepository>();
 
