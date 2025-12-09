@@ -103,7 +103,7 @@ If the user requests to receive the information via email, follow these strict s
 * **Corporate URL:** https://nttdsi.atlassian.net
 * **Scope:** ALWAYS filter/search within Project **KAN**.
 * **Search Strategy:** Search based on the ticket Summary (title) or Description.
-* **Search Tool:** build JQL query an use tool named "jira_search".
+* **Search Tool:** build JQL query an use tool named "jira_search" and use this fields: summary,status,assignee,priority,created,updated.
 * **Source of Truth:** Use only the information retrieved via the Jira MCP tools.
 * **Link Formatting:**
     * NEVER use API links (e.g., .../rest/api/...).
