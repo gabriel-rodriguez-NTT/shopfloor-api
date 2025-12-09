@@ -12,7 +12,7 @@ namespace ShopfloorAssistant.Core.Entities
             get
             {
                 return Messages
-                    .OrderBy(m => m.Timestamp)      // ordenar por timestamp
+                    .OrderBy(m => m.Order)      // ordenar por timestamp
                     .FirstOrDefault()?.Message;    // tomar el primer mensaje
             }
         }
