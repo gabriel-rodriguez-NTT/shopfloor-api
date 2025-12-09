@@ -7,5 +7,6 @@
         public string Name { get; set; }
         public string Instructions { get; set; }
         public string ModelName { get; set; }
+        public string AllowedTools { get; set; }
     }
 }

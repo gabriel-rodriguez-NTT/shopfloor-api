@@ -163,13 +163,13 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                 }));
 
             var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-            
+
             AIAgent agent = _openAIClient
              .GetChatClient(_mcpOptions.ModelName ?? _openAiOptions.AgentsModel)
              .CreateAIAgent(instructions: _mcpOptions.Instructions, tools: [.. mcpTools.Cast<AITool>()]);
             return agent;
         }
-        
+
         public async Task<Workflow> GetToolWorkflow()
         {
             var client = _openAIClient
@@ -200,15 +200,23 @@ namespace ShopfloorAssistant.Core.AgentsConfig
 
             var aiFunction = AIFunctionFactory.Create(searchDelegate);
             var mcpClient = await McpClient.CreateAsync(
-               new HttpClientTransport(new()
-               {
-                   Name = _mcpOptions.Name,
-                   Endpoint = new Uri(_mcpOptions.Endpoint),
-                   TransportMode = HttpTransportMode.StreamableHttp
-               }));
+            new HttpClientTransport(new()
+            {
+                Name = _mcpOptions.Name,
+                Endpoint = new Uri(_mcpOptions.Endpoint),
+                TransportMode = HttpTransportMode.StreamableHttp
+            }));
 
             var mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
-            mcpTools = mcpTools.Where(t => t.Name.StartsWith("jira_") && t.Name != "jira_get_project_issues").ToList();
+            var allowedTools = _mcpOptions.AllowedTools?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList()
+                ?? new List<string>();
+            // Filtrar solo las tools permitidas desde configuración
+            mcpTools = mcpTools
+                .Where(t => allowedTools.Contains(t.Name))
+                .ToList();
+
 
             ChatClientAgentOptions agentOptions = new(
                 instructions: shopfloorAgentPrompt, tools: [aiFunction, emailAiFunction, .. mcpTools.Cast<AITool>()])
@@ -216,7 +224,7 @@ namespace ShopfloorAssistant.Core.AgentsConfig
                 ChatMessageStoreFactory = ctx => _shopfloorChatMessageStore
             };
 
-            var agent =  new ChatClientAgent(client, agentOptions);
+            var agent = new ChatClientAgent(client, agentOptions);
             return agent;
         }
     }
